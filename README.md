@@ -24,15 +24,19 @@ Fidelidade medida por diff de estilo computado contra o original publicado: **20
 ## Mapa
 
 ```
+CLAUDE.md                 ⭐ estado, regras invioláveis, continuidade entre sessões
 AUDITORIA.md              estado real, riscos, próximo passo
 docs/
 ├── 01-PIPELINE.md        extração → compilação → transporte → verificação
 ├── 02-SCHEMA-ELEMENTOR.md vocabulário exato (extraído de exports reais)
-├── 03-ARMADILHAS.md      ⭐ 14 comportamentos que quebram site portado
+├── 03-ARMADILHAS.md      ⭐ 19 comportamentos que quebram site portado
 ├── 04-TRANSPORTE.md      4 rotas para escrever na página + cache
 ├── 05-FIDELIDADE.md      como provar que ficou igual
 ├── 06-UI-UX.md           decisões de interface que mudaram entrega
-└── 07-CHECKLIST.md       régua antes de entregar
+├── 07-CHECKLIST.md       régua antes de entregar
+├── 08-PESQUISA-MERCADO.md concorrentes, preços, onde todos falham
+├── 09-DECISOES.md        ⭐ decisões de arquitetura com justificativa
+└── historico/            registro cronológico das entregas
 src/                      núcleo do compilador
 skills/elementor-motor/   skill operacional
 exemplos/                 2 geradores de sites reais (referência, não produto)
@@ -70,8 +74,12 @@ Copiar o compilador é fácil. Redescobrir que o lazy-load do Elementor mata `ba
 
 ## Próximo passo
 
-**Fase 0 — extrair o extrator genérico.** Hoje o `model` é montado à mão por site; o compilador (`src/import_faithful.js`) já é genérico.
+**Fase 0 — harness de fidelidade.** Antes do extrator.
 
-Teste de aceite: *o compilador reproduz o Xpice sem uma linha escrita à mão.*
+Sem ele, o extrator é construído às cegas e não se sabe se melhorou. Com ele, cada commit tem nota objetiva — e é a única peça que não desperdiça em nenhum cenário comercial.
 
-Nada mais (UI, billing, plugin WP) deve começar antes disso.
+Teste de aceite: *o harness reproduz sozinho o resultado 20/21 do Xpice.*
+
+Depois vem a Fase 1 (extrator genérico + loop de convergência + plugin ponte), com aceite de **0 divergências em 3 breakpoints**.
+
+Nada mais (UI, billing) deve começar antes disso. Ver [`CLAUDE.md`](CLAUDE.md) para o estado completo e [`docs/09-DECISOES.md`](docs/09-DECISOES.md) para o porquê de cada escolha.
