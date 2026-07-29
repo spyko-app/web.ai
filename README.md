@@ -1,0 +1,77 @@
+# Motor Elementor
+
+Converte design/site estático em **página Elementor nativa e editável** — e mantém essa página por código.
+
+O diferencial não é gerar bonito: é gerar **editável**. Quem paga é a agência, e ela precisa entregar um site que o cliente mexa sozinho.
+
+---
+
+## Estado
+
+Dois sites reais em produção:
+
+| Site | Seções | Nós | Widgets nativos |
+|---|---|---|---|
+| Xpice Connections | 15 | 412 | 90% |
+| Ronaldo Barcelos | 9 | 240 | **94%** |
+
+Fidelidade medida por diff de estilo computado contra o original publicado: **20 de 21** elementos idênticos.
+
+👉 **Leia [`AUDITORIA.md`](AUDITORIA.md) primeiro** — diz honestamente o que funciona, o que está frágil e o que falta.
+
+---
+
+## Mapa
+
+```
+AUDITORIA.md              estado real, riscos, próximo passo
+docs/
+├── 01-PIPELINE.md        extração → compilação → transporte → verificação
+├── 02-SCHEMA-ELEMENTOR.md vocabulário exato (extraído de exports reais)
+├── 03-ARMADILHAS.md      ⭐ 14 comportamentos que quebram site portado
+├── 04-TRANSPORTE.md      4 rotas para escrever na página + cache
+├── 05-FIDELIDADE.md      como provar que ficou igual
+├── 06-UI-UX.md           decisões de interface que mudaram entrega
+└── 07-CHECKLIST.md       régua antes de entregar
+src/                      núcleo do compilador
+skills/elementor-motor/   skill operacional
+exemplos/                 2 geradores de sites reais (referência, não produto)
+```
+
+**Se você só vai ler um arquivo:** `docs/03-ARMADILHAS.md`. Metade dos bugs "misteriosos" do Elementor está lá.
+
+---
+
+## Como funciona
+
+```
+[1] EXTRAÇÃO          [2] COMPILAÇÃO         [3] TRANSPORTE        [4] VERIFICAÇÃO
+navegador headless →  model → JSON      →   save_builder      →  diff de estilo
+DOM + computed         Elementor nativo      ou REST               computado
+```
+
+**Nenhum estágio usa IA.** É tradução determinística: `rgb(10,62,168)` → `#0A3EA8`. Mesma URL = mesmo JSON, sempre.
+
+IA entra só para *rotular* (nomes de classe, alt-text), nunca para decidir estrutura. Consequência: **~R$0,05 por página** e zero alucinação de layout.
+
+---
+
+## O fosso
+
+Não é o código — é o conhecimento acumulado:
+
+- `docs/02-SCHEMA-ELEMENTOR.md` — vocabulário real, extraído de exports, não de documentação
+- `docs/03-ARMADILHAS.md` — cada item custou de 20 minutos a uma tarde para descobrir
+- `docs/05-FIDELIDADE.md` — o método que pega o que ler CSS não pega
+
+Copiar o compilador é fácil. Redescobrir que o lazy-load do Elementor mata `background-image` com `!important` em descendentes, dependendo da altura da janela, não é.
+
+---
+
+## Próximo passo
+
+**Fase 0 — extrair o extrator genérico.** Hoje o `model` é montado à mão por site; o compilador (`src/import_faithful.js`) já é genérico.
+
+Teste de aceite: *o compilador reproduz o Xpice sem uma linha escrita à mão.*
+
+Nada mais (UI, billing, plugin WP) deve começar antes disso.

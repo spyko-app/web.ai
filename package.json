@@ -1,0 +1,10 @@
+{
+  "name": "elementor-motor",
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "node --test",
+    "preview": "cd renderer && npm run dev",
+    "cli": "node src/cli.js"
+  }
+}
