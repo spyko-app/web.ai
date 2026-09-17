@@ -1,4 +1,7 @@
-# Motor Elementor
+# web.ai — Elementor Motor
+
+> **EN:** Converts a static design/site into a **native, editable Elementor page** — deterministic DOM → Elementor JSON compilation (no AI in the layout path), 4 transport routes into WordPress, and fidelity verified by computed-style diff against the original. Two production sites, 90–94 % native widgets, ~US$0.01 per page. Docs are in Portuguese; `docs/03-ARMADILHAS.md` lists 19 Elementor pitfalls worth reading in any language. MIT.
+
 
 Converte design/site estático em **página Elementor nativa e editável** — e mantém essa página por código.
 
@@ -83,3 +86,9 @@ Teste de aceite: *o harness reproduz sozinho o resultado 20/21 do Xpice.*
 Depois vem a Fase 1 (extrator genérico + loop de convergência + plugin ponte), com aceite de **0 divergências em 3 breakpoints**.
 
 Nada mais (UI, billing) deve começar antes disso. Ver [`CLAUDE.md`](CLAUDE.md) para o estado completo e [`docs/09-DECISOES.md`](docs/09-DECISOES.md) para o porquê de cada escolha.
+
+---
+
+## Licença
+
+[MIT](LICENSE)
