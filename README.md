@@ -9,6 +9,32 @@ O diferencial não é gerar bonito: é gerar **editável**. Quem paga é a agên
 
 ---
 
+## Instalação (passo a passo)
+
+1. **Pré-requisitos:** Node.js 20+ (`node -v`) e um site WordPress com Elementor onde você seja administrador.
+2. **Clone e instale:**
+   ```bash
+   git clone https://github.com/spyko-app/web.ai.git
+   cd web.ai
+   npm install
+   ```
+3. **Rode os testes** para confirmar o ambiente (24 testes):
+   ```bash
+   node --test testes/motor.test.js
+   ```
+4. **Descreva a página** em `sites/<slug>/site.js` exportando a spec (seções → widgets). Use `exemplos/xpice/` e `exemplos/ronaldo-barcelos/` como referência: são os dois geradores dos sites em produção.
+5. **Compile e valide** o JSON nativo do Elementor:
+   ```bash
+   npm run cli -- build <slug>      # gera sites/<slug>/page.json
+   npm run cli -- validate <slug>   # confere o schema (docs/02)
+   ```
+6. **Transporte para o WordPress** por uma das 4 rotas de `docs/04-TRANSPORTE.md` (editor, import, `save_builder` ou REST em `_elementor_data`). Para as rotas REST crie uma *Application Password* em `wp-admin/profile.php` e use Basic Auth; depois limpe o cache do Elementor (`DELETE /wp-json/elementor/v1/cache`).
+7. **Prove a fidelidade** com o diff de estilo computado contra o original (`docs/05-FIDELIDADE.md`) antes de entregar.
+
+Leia `docs/03-ARMADILHAS.md` antes do primeiro site real: metade dos bugs "misteriosos" do Elementor está lá.
+
+---
+
 ## Estado
 
 Dois sites reais em produção:
