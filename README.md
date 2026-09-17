@@ -1,3 +1,5 @@
+<a href="https://mateusfb-ai.vercel.app"><img src=".github/brand/banner.svg" alt="mateusfb.ai — web.ai" width="100%"></a>
+
 # web.ai — Elementor Motor
 
 > **EN:** Converts a static design/site into a **native, editable Elementor page** — deterministic DOM → Elementor JSON compilation (no AI in the layout path), 4 transport routes into WordPress, and fidelity verified by computed-style diff against the original. Two production sites, 90–94 % native widgets, ~US$0.01 per page. Docs are in Portuguese; `docs/03-ARMADILHAS.md` lists 19 Elementor pitfalls worth reading in any language. MIT.
@@ -118,3 +120,7 @@ Nada mais (UI, billing) deve começar antes disso. Ver [`CLAUDE.md`](CLAUDE.md) 
 ## Licença
 
 [MIT](LICENSE)
+
+---
+
+<p align="center"><a href="https://mateusfb-ai.vercel.app"><img src=".github/brand/mark.svg" width="20" alt=""></a><br><sub>Built in public at <a href="https://mateusfb-ai.vercel.app">mateusfb.ai</a></sub></p>
