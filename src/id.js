@@ -1,4 +1,3 @@
-// gerador determinístico de ids hex únicos por factory
 function hashHex(n, len) {
   let h = 0x811c9dc5;
   const s = String(n) + ':elementor';

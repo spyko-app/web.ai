@@ -1,10 +1,7 @@
-// Importador DOM->Elementor FIEL — segue ELEMENTOR-SCHEMA-REAL.md (corpus real Nexyo).
-// Emite settings NATIVOS (que sobrevivem ao import), não _css.
 import { newIdFactory } from './id.js';
 
-const FONT = 'Geist'; // site inteiro usa GeistSans -> Geist (Google Fonts)
+const FONT = 'Geist';
 
-// ---- helpers de valor ----
 const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
 const U = (size, unit = 'px') => ({ unit, size, sizes: [] });
 const box = (arr, unit = 'px') => {
@@ -23,7 +20,6 @@ const hex = (c) => {
   return `#${h(r)}${h(g)}${h(b)}${a < 255 ? h(a) : ''}`.toUpperCase();
 };
 
-// tipografia completa (prefixo por widget)
 function typo(st, pre = 'typography_', { mobileScale = true } = {}) {
   const s = {};
   const fs = st.fontSize ? num(st.fontSize) : null;
@@ -36,13 +32,11 @@ function typo(st, pre = 'typography_', { mobileScale = true } = {}) {
   else if (st.lineHeight && st.lineHeight !== 'normal' && !isNaN(parseFloat(st.lineHeight))) s[`${pre}line_height`] = U(parseFloat(st.lineHeight), 'em');
   if (st.letterSpacing && st.letterSpacing !== 'normal') s[`${pre}letter_spacing`] = U(num(st.letterSpacing));
   if (st.textTransform && st.textTransform !== 'none') s[`${pre}text_transform`] = st.textTransform;
-  // responsivo mobile heurístico p/ títulos grandes
   if (mobileScale && fs != null && fs >= 30) s[`${pre}font_size_mobile`] = U(Math.round(fs * 0.62));
   else if (mobileScale && fs != null && fs >= 20) s[`${pre}font_size_mobile`] = U(Math.round(fs * 0.8));
   return s;
 }
 
-// ---- estilo de container ----
 function bgSettings(st) {
   const s = {};
   const bgi = st.bgSrc || st.bgImage;
@@ -111,7 +105,6 @@ function containerStyle(st, { isInner }) {
   return s;
 }
 
-// ---- widgets ----
 function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
 function widgetSettings(n) {
@@ -148,7 +141,6 @@ function widgetSettings(n) {
   return null;
 }
 
-// ---- construção ----
 export function importDomFaithful(model) {
   const ids = newIdFactory();
 
@@ -169,13 +161,11 @@ export function importDomFaithful(model) {
     return node;
   };
 
-  // flatten: header + seções do <main> + footer viram containers de topo
   const roots = model.roots || [];
   const tops = [];
   for (const r of roots) {
     const tag = r.tag || '';
     if (tag === 'main' && r.children && r.children.length > 3) {
-      // cada filho direto do main = 1 seção de topo
       for (const sec of r.children) tops.push(section(sec));
     } else {
       tops.push(section(r));

@@ -1,5 +1,3 @@
-// Importador DOM->Elementor: converte o modelo extraído do site real (xpice-dom.json)
-// em JSON Elementor com estilos reais preservados.
 import { newIdFactory } from './id.js';
 import { makeContainer, makeWidget } from './node.js';
 
@@ -20,7 +18,6 @@ const rgbaToHex = (c) => {
   return `#${hx(r)}${hx(g)}${hx(b)}${a < 255 ? hx(a) : ''}`.toUpperCase();
 };
 
-// objeto de css cru p/ o preview aplicar verbatim (fidelidade)
 function cssForPreview(st, { asImageBox = false } = {}) {
   const s = {};
   if (st.display) s.display = st.display;
@@ -58,7 +55,6 @@ function cssForPreview(st, { asImageBox = false } = {}) {
   return s;
 }
 
-// mapeia estilos -> settings nativos Elementor (editável) + _css (preview)
 function nativeSettings(st, kind) {
   const s = {};
   const color = rgbaToHex(st.color);
@@ -89,7 +85,6 @@ function nativeSettings(st, kind) {
 function convertNode(ids, n) {
   const _css = cssForPreview(n.st);
   if (n.kind === 'image') {
-    // largura real renderizada (cap 100%); object-fit preservado
     if (n.w) { _css.width = `${n.w}px`; _css.maxWidth = '100%'; }
     if (n.h) _css.height = `${n.h}px`;
     if (n.fit) _css.objectFit = n.fit;
@@ -117,16 +112,11 @@ function convertNode(ids, n) {
   if (n.kind === 'text') {
     return makeWidget(ids, 'text-editor', { settings: { editor: `<p>${escapeHtml(n.text)}</p>`, _css } });
   }
-  // container
   const elements = (n.children || []).map((c) => convertNode(ids, c));
   return makeContainer(ids, { settings: { content_width: 'full', ...nativeSettings(n.st, 'container'), _css }, elements, isInner: true });
 }
 
 function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
-// ---------- EMISSOR LEGADO (section/column/widget + settings NATIVOS) ----------
-// Elementor V4/clássico não registra 'container'; e descarta settings desconhecidos (_css).
-// Aqui mapeamos pra section/column/widget com chaves nativas (sobrevivem ao import).
 
 function isRow(st) {
   return st && st.display === 'flex' && st.flexDirection === 'row' && !/wrap/.test(st.flexWrap || '');
@@ -193,12 +183,10 @@ export function importDomLegacy(model) {
     settings: { _column_size: size, _inline_size: null, ...style },
     elements: children.filter(Boolean), isInner: false,
   });
-  // bloco que cabe numa coluna: widget OU inner-section
   const block = (n) => {
     if (n.kind !== 'container') return widget(n);
     const kids = n.children || [];
     if (!kids.length) {
-      // container só-fundo (ex.: mapa) -> inner-section vazia com bg + min-altura
       const inner = { id: ids.id(), elType: 'section', isInner: true, settings: sectionStyle(n.st), elements: [column([])] };
       if (n.st?.minH) inner.settings.min_height = { unit: 'px', size: Math.min(n.st.minH, 600), sizes: [] };
       return inner;
@@ -208,7 +196,6 @@ export function importDomLegacy(model) {
       const cols = kids.map((c) => column([block(c)], size));
       return { id: ids.id(), elType: 'section', isInner: true, settings: sectionStyle(n.st), elements: cols };
     }
-    // pilha -> inner-section com 1 coluna
     return { id: ids.id(), elType: 'section', isInner: true, settings: sectionStyle(n.st), elements: [column(kids.map(block), 100)] };
   };
   const rootSection = (root) => ({
@@ -227,7 +214,7 @@ export function importDom(model) {
   const ids = newIdFactory();
   const content = (model.roots || []).map((r) => {
     const node = convertNode(ids, r);
-    node.isInner = false; // roots são seções de topo
+    node.isInner = false;
     return node;
   });
   return {

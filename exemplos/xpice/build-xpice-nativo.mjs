@@ -1,21 +1,13 @@
-// Gerador FIEL do site Xpice como template JSON do Elementor (containers + widgets nativos).
-// Roda por FORA do Elementor: emite sites/xpice/xpice-nativo.json -> importar via Modelos > Importar.
-// Fonte da verdade dos valores: /Volumes/PortableSSD/XPICE/xpice-site (globals.css + componentes).
-// Regra: seções de texto/layout = nativo editável; mapa/carrossel/pillars/animações = widget HTML.
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-// mapa-múndi real (paths por país, coords arredondadas) — igual ao OriginMap oficial
 const WORLD = JSON.parse(readFileSync(new URL('./worldpaths-min.json', import.meta.url), 'utf8'));
 
 const V = 'https://xpice-site.vercel.app';
-const WPUP = 'https://xpiceconnections.com/wp-content/uploads/2026/07'; // TODOS os assets hospedados na Media Library do WP (nada externo/Vercel)
-// fonte Geist embutida como data-URI (fica dentro do WP, sem depender do Vercel)
+const WPUP = 'https://xpiceconnections.com/wp-content/uploads/2026/07';
 const GEIST = readFileSync(new URL('./assets/geist.datauri.txt', import.meta.url), 'utf8').trim();
-// fotos subiram com sufixo do WP (colisão de nome) — mapa slug->arquivo real
 const WPPHOTO = { field: 'field-4', warehouse: 'warehouse-5', facility: 'facility-4', grading: 'grading-6', meeting: 'meeting-1', expo: 'expo-3' };
 const photoUrl = (s) => `${WPUP}/${WPPHOTO[s] || s}.jpg`;
 
-// ---- ids únicos 8-hex (determinístico por contador) ----
 let _n = 0;
 const id = () => {
   let h = 0x811c9dc5 ^ (_n++);
@@ -23,10 +15,8 @@ const id = () => {
   return (h.toString(16) + '00000000').slice(0, 8);
 };
 
-// ---- helpers de settings ----
 const U = (size, unit = 'px') => ({ unit, size, sizes: [] });
 const bx = (t, r, b, l) => ({ unit: 'px', top: `${t}`, right: `${r}`, bottom: `${b}`, left: `${l}`, isLinked: false });
-// border-radius é controle de DIMENSÕES (4 cantos), NÃO slider. Usar rad(), nunca U().
 const rad = (v) => ({ unit: 'px', top: `${v}`, right: `${v}`, bottom: `${v}`, left: `${v}`, isLinked: true });
 const W = (widgetType, settings) => ({ id: id(), elType: 'widget', widgetType, settings, elements: [], isInner: false });
 const Cn = (isInner, settings, elements) => ({ id: id(), elType: 'container', isInner, settings, elements });
@@ -37,7 +27,6 @@ const T = {
   navy900: '#071232', paper: '#f5f7fc', line: '#e4e8f2', slate: '#5a6784',
 };
 
-// ---- i18n (pt/en/es) — fonte da verdade: xpice-site/lib/i18n.js ----
 const I18N = {
   pt: { nav: ['Plataforma', 'Produtos', 'Presença global', 'Como funciona'], ctaShort: 'Fale conosco',
     eyebrow: 'Compras internacionais · Ingredientes alimentícios',
@@ -76,15 +65,12 @@ const I18N = {
 const LANG_FLAG = { pt: `${WPUP}/flag-br.png`, en: `${WPUP}/flag-gb.png`, es: `${WPUP}/flag-es.png` };
 const LANG_LABEL = { pt: 'PT', en: 'EN', es: 'ES' };
 const LANG_NAME = { pt: 'Português', en: 'English', es: 'Español' };
-// widget que recebe uma classe (para o i18n switch achar o elemento)
 const WK = (widgetType, key, settings) => W(widgetType, { ...settings, _css_classes: key });
 
-// ================= FONT LOADER (vai no page_settings.custom_css — NÃO como widget, senão cria faixa branca no topo) =================
 const PAGE_CSS = `@font-face{font-family:'Geist';src:url('${GEIST}') format('woff2');font-weight:100 900;font-display:swap}` +
   `.xnav a,.xnav .elementor-button{text-decoration:none!important}.xnav .elementor-button{box-shadow:none}` +
-  `html{overflow-x:clip}body{overflow-x:visible}` + // clip só no html (não body) — clip no body quebra position:sticky dos cards; hidden faria body virar scroller
+  `html{overflow-x:clip}body{overflow-x:visible}` +
   `.xscroll{position:absolute!important;width:0;height:0;overflow:hidden}` +
-  // estado scrolled do header (globals.css:166,190-197)
   `.xnav{transition:background .4s cubic-bezier(.22,1,.36,1),border-color .4s,box-shadow .4s;border-bottom:1px solid transparent}` +
   `.xnav.scrolled{background:rgba(255,255,255,.82)!important;-webkit-backdrop-filter:saturate(180%) blur(16px);backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid #e4e8f2}` +
   `.xnav.scrolled .xlinks{background:rgba(255,255,255,.7)!important;border-color:#e4e8f2!important}` +
@@ -93,65 +79,48 @@ const PAGE_CSS = `@font-face{font-family:'Geist';src:url('${GEIST}') format('wof
   `.xnav.scrolled .x-navcta .elementor-button{background:linear-gradient(180deg,#1650c8,#0a3ea8)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 8px 20px -8px rgba(10,62,168,.5)!important}` +
   `.xnav.scrolled .x-navcta .elementor-button-icon,.xnav.scrolled .x-navcta .elementor-button-icon i,.xnav.scrolled .x-navcta .elementor-button-icon svg{color:#fff!important}` +
   `.xnav.scrolled .xlbtn{background:#fff!important;border-color:#e4e8f2!important;color:#5a6784!important}` +
-  // botão com ícone: centraliza verticalmente texto vs ícone (wrapper flex vinha align-items:normal → texto colava no topo)
   `.elementor-button-content-wrapper{align-items:center}` +
-  // arrow uniforme em TODOS os botões: seta ↗ (rotate -45) + slide diagonal no hover (ref: "Falar com um especialista")
   `.elementor-button-icon i,.elementor-button-icon svg{transform:none!important;transition:transform .35s cubic-bezier(.22,1,.36,1)!important}` +
   `.elementor-button:hover .elementor-button-icon i,.elementor-button:hover .elementor-button-icon svg{transform:rotate(45deg)!important}` +
-  // ---- smooth scroll + reveal-on-scroll (blur/fade/rise por elemento; hero entra linha a linha) ----
   `html{scroll-behavior:smooth}html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!important}.lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain}.lenis.lenis-stopped{overflow:hidden}` +
   `.xrl-on .xrl{opacity:0;filter:blur(12px);transform:translateY(26px);transition:opacity .85s cubic-bezier(.22,1,.36,1),filter .85s cubic-bezier(.22,1,.36,1),transform .85s cubic-bezier(.22,1,.36,1)}` +
   `.xrl-on .xrl.xin{opacity:1;filter:blur(0);transform:none}` +
   `@media(prefers-reduced-motion:reduce){.xrl-on .xrl{opacity:1!important;filter:none!important;transform:none!important;transition:none!important}html{scroll-behavior:auto}}` +
-  // ---- nav responsivo: DESKTOP = pill+cta+lang inline (header original); ≤860 = burger+popup ----
   `.xnav .xburger{display:none}` +
   `@media(max-width:860px){.xnav .xlinks{display:none!important}.xnav .elementor-widget-button.x-navcta{display:none!important}.xnav .xlang{display:none!important}.xnav .xburger{display:inline-flex!important}}` +
-  // widget do toggle (só script) nunca ocupa espaço no header
   `.xpopjs{position:absolute!important;width:0!important;height:0!important;min-height:0!important;overflow:hidden!important;pointer-events:none;flex:0 0 0!important;margin:0!important;padding:0!important}` +
   `@media(max-width:640px){.e-con.e-con-boxed{padding-left:20px!important;padding-right:20px!important}.prodx{gap:12px!important}.xhero{padding-left:0!important;padding-right:0!important}.xhero>.e-con-inner,.xhero .e-con-inner{padding-left:14px!important;padding-right:14px!important}.xlead{padding-left:0!important;padding-right:0!important;max-width:none!important}` +
     `.x-eyebrow p{white-space:nowrap!important;font-size:clamp(9px,3vw,11px)!important;padding-left:12px!important;padding-right:12px!important}` +
     `.x-title .elementor-heading-title{font-size:clamp(18px,5.5vw,22px)!important;letter-spacing:-.03em;line-height:1.14}.x-title .htl{white-space:nowrap;display:block}.x-title{margin-top:12px!important}` +
     `.x-sub{margin-top:16px!important}.x-sub .elementor-widget-container,.x-sub p{font-size:clamp(13px,3.4vw,14.5px)!important;line-height:1.5!important}}` +
-  // ---- pass mobile por seção ----
   `@media(max-width:640px){` +
-    // Produtos: 1 coluna + cards em pilha "sticky" (stack ao rolar) + info SEMPRE visível (sem hover no mobile)
     `.prodx{grid-template-columns:1fr!important;gap:18px!important}` +
     `.prodx-card{position:sticky!important;top:74px!important;aspect-ratio:4/5;box-shadow:0 22px 44px -26px rgba(4,10,30,.7)}` +
     `.prodx-go{display:none!important}` +
     `.prodx-cap{display:none!important}` +
-    // overlay vira painel de rodapé estático: título (h) + badges dos itens sobre gradiente
     `.prodx-hover{position:absolute!important;inset:auto 0 0 0!important;opacity:1!important;background:linear-gradient(180deg,rgba(7,18,50,0) 0%,rgba(6,14,40,.5) 42%,rgba(4,7,18,.93) 100%)!important;padding:22px 18px 20px!important;gap:12px!important;justify-content:flex-end}` +
     `.prodx-hover-t,.prodx-hover-t .elementor-heading-title{font-size:clamp(20px,5.8vw,25px)!important;line-height:1.08!important}` +
     `.prodx-chips .elementor-widget-container>ul,.prodx-chips ul{gap:7px!important}` +
     `.prodx-chips li{font-size:12px!important;padding:5px 11px!important}` +
-    // Parceiros brasileiros: logos cabem dentro do card
     `.brz-partners{gap:12px}.brz-card{padding:22px 14px!important}.brz-logo img{max-width:100%!important;max-height:40px!important}` +
-    // A plataforma: pilares 1 coluna + sticky stack
     `.pillars{grid-template-columns:1fr!important}` +
     `.pillars .pillar{position:sticky!important;top:74px!important;box-shadow:0 22px 44px -26px rgba(4,10,30,.35)}` +
-    // Parceiros brasileiros: cards em sticky stack
     `.brz-partners .brz-card{position:sticky!important;top:74px!important}` +
-    // Sobre · timeline: selo "a confirmar" quebra pra baixo (não sobrepõe o título)
-    // trajetória vira tabela compacta: some a coluna de marco, números encolhem
     `.about-tl-row{grid-template-columns:9px 34px 46px 52px 68px!important;gap:6px!important;padding:9px 0!important}` +
     `.about-tl-row.is-nota .about-tl-t{grid-column:3/-1!important}` +
     `.about-tl-mk{display:none!important}` +
     `.about-tl-n{font-size:11px!important}.about-tl-c{font-size:8px!important;letter-spacing:.06em!important}` +
     `.about-tl-y{font-size:10px!important}` +
-    // Presença/mapa: card do país estático abaixo do mapa; some o conector solto
     `.wmap-card{position:static!important;width:100%!important;right:auto!important;top:auto!important;margin-top:16px;box-shadow:0 12px 30px -16px rgba(5,20,44,.25)}.wmap-panel{min-height:auto!important}.wmap-connector{display:none!important}` +
   `}`;
 
-// widget invisível com o handler de scroll (toggle .scrolled + troca logo branca<->escura)
 const scrollJS = `(function(){function I(){var n=document.querySelector('.xnav');if(!n||n.__sc)return;n.__sc=1;var im=n.querySelector('.elementor-widget-image img');var W='${WPUP}/xpice-logo-white.png',D='${WPUP}/xpice-logo.png';if(im){im.removeAttribute('srcset');im.removeAttribute('sizes');im.removeAttribute('data-src');im.removeAttribute('data-srcset');im.loading='eager';im.decoding='sync';var pl=new Image();pl.src=D;}function o(){var sc=(window.scrollY||document.documentElement.scrollTop||0)>20;n.classList.toggle('scrolled',sc);if(im)im.src=sc?D:W;}window.addEventListener('scroll',o,{passive:true});o();}if(document.readyState!=='loading')I();else document.addEventListener('DOMContentLoaded',I);})();`;
 const scrollWidget = W('html', { _css_classes: 'xscroll',
   html: `<script>${scrollJS.replace(/<\/script>/g, "<\\/script>")}</script>` });
 
-// ================= NAV =================
 const logo = W('image', { image: { url: `${WPUP}/xpice-logo-white.png`, source: 'url' }, image_size: 'full', align: 'left',
   height: U(32), width: U(119), _css_classes: 'xlogo', custom_css: 'selector .elementor-widget-container{text-align:left}selector img{height:32px;width:auto;margin:0}' });
 
-// nav-links a: hover color #fff + bg rgba(255,255,255,.14) (globals.css:180). key = classe p/ i18n switch
 const navLink = (t, href, key) => WK('button', key, { text: t, link: { url: href, is_external: '', nofollow: '' },
   background_color: 'rgba(0,0,0,0)', button_text_color: 'rgba(255,255,255,.82)',
   hover_color: '#ffffff', button_background_hover_color: 'rgba(255,255,255,.14)', border_radius: rad(100),
@@ -166,7 +135,6 @@ const linksPill = Cn(true, { content_width: 'full', flex_direction: 'row', flex_
   [navLink('Plataforma', '#plataforma', 'x-nav0'), navLink('Produtos', '#produtos', 'x-nav1'),
    navLink('Presença global', '#presenca', 'x-nav2'), navLink('Como funciona', '#como-funciona', 'x-nav3')]);
 
-// Nav CTA (globals.css:172,183-185): pill branca, box-shadow, seta ↗ sem círculo; hover bg royal-50 + ícone rotate45
 const navCta = WK('button', 'x-navcta', { text: 'Fale conosco', link: { url: '#contato', is_external: '', nofollow: '' },
   selected_icon: { value: 'fas fa-arrow-right', library: 'fa-solid' }, icon_align: 'right',
   background_color: T.white, button_text_color: T.ink, border_radius: rad(100), text_padding: bx(0, 24, 0, 24),
@@ -178,9 +146,7 @@ const navCta = WK('button', 'x-navcta', { text: 'Fale conosco', link: { url: '#c
     'selector .elementor-button-icon i,selector .elementor-button-icon svg{font-size:13px;width:14px;transform:rotate(-45deg)}' +
     'selector .elementor-button:hover .elementor-button-icon i,selector .elementor-button:hover .elementor-button-icon svg{transform:rotate(-45deg) translate(3px,-3px)}' });
 
-// lang dropdown FUNCIONAL (globals.css:181-207 + Nav.js): botão + menu 3 idiomas + JS que troca hero/nav in-place
 const langMenuHTML = ['pt', 'en', 'es'].map((l) => `<a class="xlopt" data-l="${l}"${l === 'pt' ? ' data-active="true"' : ''}><img class="xlflag" src="${LANG_FLAG[l]}" alt=""><span>${LANG_NAME[l]}</span><svg class="xlcheck" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>`).join('');
-// i18n das seções 4–14 (pt/en/es) — consumido pelo apply() central + Steps/Origens (via window.__XS)
 const SEC = {
   pt: {
     sol: { eyebrow: 'A solução', ta: 'Inteligência de compra', tb: 'em cada operação.', kicker: 'Sua equipe de compras decide com informação. Sua produção recebe com previsibilidade.', cta: 'Falar com um especialista', items: [{ t: 'Fornecedores qualificados', d: 'Rede homologada por desempenho real.' }, { t: 'Dados de mercado', d: 'Preço atualizado, com histórico e tendência.' }, { t: 'Acompanhamento completo', d: 'Da origem ao destino, sem pontos cegos.' }, { t: 'Melhor momento de compra', d: 'Indicadores e critérios de venda apontam a melhor data para comprar.' }] },
@@ -219,7 +185,6 @@ const SEC = {
     fcta: { title: 'Lleve inteligencia de mercado a la próxima compra de su empresa.', text: 'Hable con un especialista de Xpice Connections y conozca la plataforma: seguimiento de contenedores, informe semanal de precios y scoring de proveedores, aplicados a la realidad de su operación.', cta: 'Agendar una charla', cta2: 'Recibir el informe semanal' },
     foot: { tagline: 'La capa de datos de la compra internacional de especias.', contact: 'Contacto', rights: 'Todos los derechos reservados.', menu: 'Menú', lang: 'Idioma', links: ['Plataforma', 'Productos', 'Presencia global', 'Cómo funciona', 'Marca'] } } };
 
-// JS do switcher em base64 (roda via img onerror — sem colisão de aspas, funciona mesmo com innerHTML/sanitização de <script>)
 const langJS = `function init(){if(window.__xlangInit)return;window.__xlangInit=1;if(document.body.classList.contains('elementor-editor-active'))return;var D=${JSON.stringify(I18N)};var S=${JSON.stringify(SEC)};var F=${JSON.stringify(LANG_FLAG)},L=${JSON.stringify(LANG_LABEL)};function txt(sel,v){document.querySelectorAll(sel).forEach(function(e){var t=e.querySelector(".elementor-button-text")||e.querySelector("p")||e;t.textContent=v;});}function apply(l){var d=D[l];if(!d)return;for(var i=0;i<4;i++)txt(".x-nav"+i,d.nav[i]);txt(".x-navcta",d.ctaShort);txt(".x-cta",d.cta);document.querySelectorAll(".x-eyebrow p").forEach(function(e){e.textContent=d.eyebrow;});document.querySelectorAll(".x-title .elementor-heading-title").forEach(function(e){e.innerHTML=d.title.map(function(x){return '<span class="htl">'+x+'</span>';}).join("");});document.querySelectorAll(".x-sub p").forEach(function(e){e.textContent=d.sub;});document.querySelectorAll(".x-mlabel p").forEach(function(e){e.innerHTML='<span class="dot"></span> '+d.mlabel;});document.querySelectorAll(".x-mtxt p").forEach(function(e){e.textContent=d.mtxt;});document.querySelectorAll(".x-mlink p").forEach(function(e){e.innerHTML=d.mlink+' <span class="ar">\\u2192</span>';});if(d.num){document.querySelectorAll(".x-num-eyebrow p").forEach(function(e){e.textContent=d.num.label;});document.querySelectorAll(".x-num-title .elementor-heading-title").forEach(function(e){e.innerHTML=d.num.tA+' <span class="muted">'+d.num.tB+'</span>';});document.querySelectorAll(".x-num-sub p").forEach(function(e){e.textContent=d.num.sub;});txt(".x-num-cta",d.cta);}if(d.kpi){var kc=document.querySelectorAll(".kpi-card");d.kpi.forEach(function(k,i){var c=kc[i];if(!c)return;var kv=c.querySelector(".kpi-v"),kl=c.querySelector(".kpi-l"),kd=c.querySelector(".kpi-d");if(kv)kv.textContent=k.v;if(kl)kl.textContent=k.l;if(kd)kd.textContent=k.d;});}if(d.prob){var pe=document.querySelector(".x-prob-eyebrow p");if(pe)pe.textContent=d.prob.eyebrow;document.querySelectorAll(".x-prob-title .elementor-heading-title").forEach(function(e){e.innerHTML=d.prob.ta+' <span class="muted">'+d.prob.tb+'</span>';});var px=document.querySelector(".x-prob-text p");if(px)px.textContent=d.prob.text;d.prob.cards.forEach(function(c,i){var t=document.querySelector(".x-prob-t"+i+" .elementor-heading-title");if(t)t.textContent=c.t;var dd=document.querySelector(".x-prob-d"+i+" p");if(dd)dd.textContent=c.d;});}var s2=S[l];if(s2){function Tx(sel,v){var e=document.querySelector(sel);if(e){var t=e.querySelector("p")||e;t.textContent=v;}}function Hx(sel,h){var e=document.querySelector(sel);if(e)e.innerHTML=h;}function Qx(sel,arr){var ns=document.querySelectorAll(sel);arr.forEach(function(v,i){if(ns[i])ns[i].textContent=v;});}function TT(sel,ta,tb){document.querySelectorAll(sel).forEach(function(e){e.innerHTML=ta+' <span class="muted">'+tb+'</span>';});}function LastT(sel,arr){document.querySelectorAll(sel).forEach(function(e,i){if(arr[i]==null)return;var n=e.childNodes[e.childNodes.length-1];if(n&&n.nodeType===3)n.textContent=arr[i];else e.appendChild(document.createTextNode(arr[i]));});}function FirstT(sel,arr){document.querySelectorAll(sel).forEach(function(e,i){if(arr[i]==null)return;var n=e.childNodes[0];if(n&&n.nodeType===3)n.textContent=arr[i];});}
 var so=s2.sol;Tx(".x-sol-eyebrow",so.eyebrow);TT(".x-sol-title .elementor-heading-title",so.ta,so.tb);Tx(".x-sol-kicker",so.kicker);so.items.forEach(function(it,i){Tx(".x-sol-t"+i+" .elementor-heading-title",it.t);Tx(".x-sol-d"+i,it.d);});txt(".x-sol-cta",so.cta);
 var ho=s2.how;Tx(".x-how-eyebrow",ho.eyebrow);TT(".x-how-title .elementor-heading-title",ho.ta,ho.tb);Tx(".x-how-badge",ho.badge);
@@ -258,8 +223,6 @@ const langWidget = W('html', { html:
   `</style>` +
   `<script>${langJS.replace(/<\/script>/g, "<\\/script>")}</script>` });
 
-// ---- NAV MENU nativo/EDITÁVEL: burger + popup (containers + button widgets; CSS na aba Avançado). Só o toggle é script. ----
-// burger (button widget)
 const iconNoSpin = 'selector .elementor-button-icon i,selector .elementor-button-icon svg{transform:none!important}selector .elementor-button:hover .elementor-button-icon i,selector .elementor-button:hover .elementor-button-icon svg{transform:none!important}';
 const burger = WK('button', 'xburger', { text: '', selected_icon: { value: 'fas fa-bars', library: 'fa-solid' }, icon_align: 'left',
   link: { url: '#', is_external: '', nofollow: '' }, button_text_color: '#ffffff',
@@ -267,7 +230,6 @@ const burger = WK('button', 'xburger', { text: '', selected_icon: { value: 'fas 
   custom_css: 'selector .elementor-button{width:46px;height:46px;min-height:0;padding:0;display:flex;align-items:center;justify-content:center;background:transparent}' +
     'selector .elementor-button-icon{margin:0}selector .elementor-button-icon i,selector .elementor-button-icon svg{font-size:19px}' + iconNoSpin +
     '.xnav.scrolled .xburger .elementor-button{color:#0b1631;border-color:#e4e8f2;background:#fff}' });
-// close (button só ícone)
 const popClose = WK('button', 'xdclose', { text: '', selected_icon: { value: 'fas fa-times', library: 'fa-solid' }, icon_align: 'left',
   link: { url: '#', is_external: '', nofollow: '' }, button_text_color: '#0b1631',
   border_border: 'solid', border_width: bx(1, 1, 1, 1), border_color: '#e4e8f2', border_radius: rad(11),
@@ -275,16 +237,13 @@ const popClose = WK('button', 'xdclose', { text: '', selected_icon: { value: 'fa
 const popLogo = W('image', { image: { url: `${WPUP}/xpice-logo.png`, source: 'url' }, image_size: 'full', height: U(26), custom_css: 'selector img{height:26px;width:auto}' });
 const popHead = Cn(false, { content_width: 'full', flex_direction: 'row', flex_justify_content: 'space-between', flex_align_items: 'center',
   css_classes: 'xpop-head', custom_css: 'selector{margin-bottom:18px}' }, [popLogo, popClose]);
-// links do menu (button; classe x-navN p/ i18n + xdl)
 const popLink = (t, href, nav) => WK('button', 'x-nav' + nav + ' xdl', { text: t, link: { url: href, is_external: '', nofollow: '' },
   background_color: 'rgba(0,0,0,0)', button_text_color: '#0b1631', typography_typography: 'custom', typography_font_family: 'Geist',
   typography_font_size: U(20), typography_font_weight: '500', typography_letter_spacing: U(-0.02, 'em'),
   custom_css: 'selector .elementor-button{justify-content:flex-start;width:100%;padding:14px 0;min-height:0;border-bottom:1px solid #eef1f7;border-radius:0;transition:color .2s}selector .elementor-button:hover{color:#0a3ea8;background:transparent}' });
-// CTA do popup
 const popCta = WK('button', 'x-navcta xdcta', { text: 'Fale conosco', link: { url: '#contato', is_external: '', nofollow: '' },
   button_text_color: '#ffffff', typography_typography: 'custom', typography_font_family: 'Geist', typography_font_size: U(15), typography_font_weight: '600', border_radius: rad(100),
   custom_css: 'selector{margin-top:22px}selector .elementor-button{width:100%;justify-content:center;min-height:0;padding:15px;background:linear-gradient(180deg,#0a48c8,#0a3ea8);box-shadow:0 10px 26px -12px rgba(10,62,168,.6)}' });
-// idiomas (button; data-l via custom_attributes → o toggle proxy-clica no .xlopt do engine)
 const popLang = (l) => WK('button', 'xdlang', { text: LANG_LABEL[l], link: { url: '#', is_external: '', nofollow: '', custom_attributes: `data-l|${l}` },
   background_color: '#ffffff', button_text_color: '#5a6784', typography_typography: 'custom', typography_font_family: 'Geist Mono',
   typography_font_size: U(12.5), typography_letter_spacing: U(0.06, 'em'),
@@ -292,7 +251,6 @@ const popLang = (l) => WK('button', 'xdlang', { text: LANG_LABEL[l], link: { url
   custom_css: 'selector .elementor-button{min-height:0;padding:9px 16px}' });
 const popLangs = Cn(false, { content_width: 'full', flex_direction: 'row', flex_gap: U(8), css_classes: 'xpop-langs', custom_css: 'selector{margin-top:20px}' },
   ['pt', 'en', 'es'].map(popLang));
-// card + overlay (containers)
 const popCard = Cn(false, { content_width: 'full', flex_direction: 'column', css_classes: 'xpop',
   custom_css: 'selector{width:100%;max-width:460px;max-height:calc(100dvh - 48px);overflow-y:auto;background:#fff;border-radius:26px;padding:26px;box-shadow:0 40px 90px -24px rgba(5,20,44,.5);transform:scale(.94) translateY(8px);opacity:0;transition:transform .34s cubic-bezier(.22,1,.36,1),opacity .34s cubic-bezier(.22,1,.36,1)}' },
   [popHead, popLink('Plataforma', '#plataforma', 0), popLink('Produtos', '#produtos', 1), popLink('Presença global', '#presenca', 2), popLink('Como funciona', '#como-funciona', 3), popCta, popLangs]);
@@ -300,15 +258,12 @@ const popOv = Cn(false, { content_width: 'full', flex_justify_content: 'center',
   custom_css: 'selector{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(4,10,28,.45);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);opacity:0;pointer-events:none;transition:opacity .3s cubic-bezier(.22,1,.36,1)}' +
     'selector[data-open="true"]{opacity:1;pointer-events:auto}selector[data-open="true"] .xpop{transform:none;opacity:1}' },
   [popCard]);
-// toggle (único script; o conteúdo/estilo do menu é 100% widget nativo editável acima)
 const popJS = `(function(){function I(){var b=document.querySelector('.xburger'),ov=document.querySelector('.xpop-ov');if(!b||!ov||b.__i)return;b.__i=1;var bl=b.querySelector('a,button')||b;function set(o){ov.setAttribute('data-open',o?'true':'false');document.body.style.overflow=o?'hidden':'';try{if(window.__lenis){if(o)window.__lenis.stop();else window.__lenis.start();}}catch(e){}}bl.addEventListener('click',function(e){e.preventDefault();set(ov.getAttribute('data-open')!=='true');});ov.addEventListener('click',function(e){if(e.target===ov)set(false);});ov.querySelectorAll('.xdl a,.xdl button').forEach(function(el){el.addEventListener('click',function(){set(false);});});ov.querySelectorAll('.xdclose a,.xdclose button').forEach(function(el){el.addEventListener('click',function(e){e.preventDefault();set(false);});});ov.querySelectorAll('.xdlang a,.xdlang button').forEach(function(el){el.addEventListener('click',function(e){e.preventDefault();var l=el.getAttribute('data-l');var o=l&&document.querySelector('.xlopt[data-l="'+l+'"]');if(o)o.click();set(false);});});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});}if(document.readyState!=='loading')I();else document.addEventListener('DOMContentLoaded',I);})();`;
 const popScript = W('html', { _css_classes: 'xpopjs', html: `<script>${popJS.replace(/<\/script>/g, "<\\/script>")}</script>` });
 
-// navRight: logo à esquerda · cta(desktop)+burger à direita (col "auto" do grid) · popup+engine idioma no DOM
 const navRight = Cn(true, { content_width: 'full', flex_direction: 'row', flex_gap: U(12), flex_align_items: 'center',
   flex_justify_content: 'flex-end', css_classes: 'xnavright', custom_css: 'selector .elementor-widget-html{width:auto}' }, [navCta, langWidget, burger, popOv, popScript]);
 
-// navInner: DESKTOP grid 1fr/auto/1fr (logo · pill · cta+lang) = header original; ≤860 vira 1fr/auto (logo · burger dir)
 const navInner = Cn(true, { content_width: 'boxed', boxed_width: U(1220), min_height: U(78), padding: bx(0, 32, 0, 32),
   css_classes: 'xnavinner',
   custom_css: 'selector>.e-con-inner{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}@media(max-width:860px){selector>.e-con-inner{grid-template-columns:1fr auto}}' },
@@ -318,13 +273,11 @@ const nav = Cn(false, { content_width: 'full', flex_direction: 'row', flex_justi
   flex_align_items: 'center', min_height: U(79), css_classes: 'xnav',
   custom_css: 'selector{position:fixed;top:0;left:0;width:100%;z-index:120}' }, [navInner, scrollWidget]);
 
-// ================= HERO =================
 const badge = W('text-editor', { _css_classes: 'x-eyebrow', editor: '<p>Compras internacionais · Ingredientes alimentícios</p>', text_color: T.white,
   _element_width: 'initial', typography_typography: 'custom', typography_font_family: 'Geist', typography_font_size: U(13),
   typography_font_weight: '500', typography_letter_spacing: U(0.02, 'em'),
   custom_css: 'selector .elementor-widget-container{display:inline-flex}selector p{margin:0;display:inline-flex;align-items:center;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.30);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:9px 17px;border-radius:100px}' });
 
-// hero-title (globals.css:228-231): 4 linhas .htl nowrap + 0.06em; font clamp(24,3.05vw,41)
 const htl = ['Importação e exportação', 'de ingredientes alimentícios', 'com inteligência de mercado', 'e previsibilidade.']
   .map((l) => `<span class="htl">${l}</span>`).join('');
 const h1 = W('heading', { _css_classes: 'x-title', title: htl,
@@ -345,7 +298,6 @@ const cta = WK('button', 'x-cta', { text: 'Falar com um especialista', link: { u
   background_color: T.gold, button_text_color: T.ink, border_radius: rad(100), text_padding: bx(8, 8, 8, 24),
   typography_typography: 'custom', typography_font_family: 'Geist', typography_font_size: U(15), typography_font_weight: '600',
   typography_letter_spacing: U(-0.012, 'em'), _margin: bx(30, 0, 0, 0),
-  // hero-cta (globals.css:234-238): hover translateY -2px + shadow maior + ícone svg rotate45
   custom_css: 'selector .elementor-button{display:inline-flex;align-items:center;gap:14px;min-height:54px;box-shadow:0 12px 30px -12px rgba(196,146,46,0.6);transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s cubic-bezier(.22,1,.36,1)}' +
     'selector .elementor-button:hover{transform:translateY(-2px);box-shadow:0 16px 38px -12px rgba(196,146,46,0.72)}' +
     'selector .elementor-button-icon{width:38px;height:38px;border-radius:50%;background:#0b1631;color:#fff;display:grid;place-items:center;margin:0}' +
@@ -361,7 +313,6 @@ const mDot = W('text-editor', { _css_classes: 'x-mlabel', editor: '<p><span clas
 const mTxt = W('text-editor', { _css_classes: 'x-mtxt', editor: '<p>Conectar a sua indústria aos melhores fornecedores do mundo, com dados, rastreabilidade e previsibilidade em cada compra.</p>',
   text_color: 'rgba(255,255,255,.82)', typography_typography: 'custom', typography_font_family: 'Geist', typography_font_size: U(13.5),
   typography_line_height: U(1.6, 'em'), _margin: bx(12, 0, 0, 0) });
-// hero-mission-link (globals.css:243-244): hover gap 8->12
 const mLink = W('text-editor', { _css_classes: 'x-mlink', editor: '<p>Conhecer a plataforma <span class="ar">→</span></p>', text_color: T.white, typography_typography: 'custom',
   typography_font_family: 'Geist', typography_font_size: U(13.5), typography_font_weight: '500', _margin: bx(16, 0, 0, 0),
   custom_css: 'selector p{margin:0;display:inline-flex;align-items:center;gap:8px;transition:gap .25s cubic-bezier(.22,1,.36,1)}' +
@@ -371,12 +322,10 @@ const mission = Cn(true, { content_width: 'full', flex_direction: 'column', padd
   custom_css: 'selector{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:18px;max-width:358px;justify-self:end;align-self:end}' },
   [mDot, mTxt, mLink]);
 
-// hero-inner (globals.css:220-225): GRID 1fr/0.86fr, align end, gap+padding clamp exatos
 const heroInner = Cn(true, { content_width: 'boxed', boxed_width: U(1220),
   custom_css: 'selector>.e-con-inner{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,0.86fr);align-items:end;gap:clamp(28px,5vw,64px);padding:clamp(120px,15vh,150px) 32px clamp(40px,6vh,66px)}' +
     '@media(max-width:900px){selector>.e-con-inner{grid-template-columns:1fr;gap:28px;align-items:start;padding:118px 20px 42px}}' }, [lead, mission]);
 
-// hero-card (globals.css:212-219,249-252): min-height 100dvh · bg em ::after com zoom heroMediaIn · shade ::before 4 stops
 const hero = Cn(false, { content_width: 'full', flex_direction: 'column', flex_justify_content: 'flex-end', min_height: U(100, 'vh'),
   css_classes: 'xhero',
   custom_css: 'selector{overflow:hidden;min-height:100dvh}' +
@@ -385,16 +334,12 @@ const hero = Cn(false, { content_width: 'full', flex_direction: 'column', flex_j
     'selector>.e-con,selector>.e-con-inner{position:relative;z-index:2}' +
     '@keyframes heroMediaIn{from{opacity:0;transform:scale(1.045)}to{opacity:1;transform:scale(1.015)}}' }, [heroInner]);
 
-// ================= SEÇÃO 2 — NÚMEROS (KPIs) =================
-// globals.css:276-314 · page.js:68-85 · KpiCarousel.js. Intro nativo editável + carrossel = widget HTML.
-// eyebrow (globals.css:71-76): mono 12px, letter-spacing .18em, uppercase, royal-500, losango dourado ::before
 const eyebrowW = (text, key) => WK('text-editor', key, { editor: `<p>${text}</p>`, _element_width: 'initial',
   typography_typography: 'custom', typography_font_family: 'Geist Mono', typography_font_size: U(12),
   typography_letter_spacing: U(0.18, 'em'), typography_text_transform: 'uppercase', text_color: '#2e6bf0',
   custom_css: 'selector .elementor-widget-container{display:inline-flex}selector p{margin:0;display:inline-flex;align-items:center;gap:12px;font-weight:500}' +
     'selector p::before{content:"";width:7px;height:7px;background:#c4922e;transform:rotate(45deg);border-radius:1px;flex:none}' });
 
-// h-section two-tone (globals.css:78): parte final em .muted (steel)
 const numH2 = WK('heading', 'x-num-title', { title: 'A operação, em <span class="muted">dados concretos.</span>', header_size: 'h2',
   title_color: T.ink, typography_typography: 'custom', typography_font_family: 'Geist', typography_font_weight: '600',
   typography_letter_spacing: U(-0.04, 'em'), typography_line_height: U(1.04, 'em'), _margin: bx(16, 0, 0, 0),
@@ -404,7 +349,6 @@ const numLede = WK('text-editor', 'x-num-sub', { editor: '<p>Cada compra interna
   text_color: '#5a6784', typography_typography: 'custom', typography_font_family: 'Geist', typography_line_height: U(1.6, 'em'),
   custom_css: 'selector{max-width:52ch}selector .elementor-widget-container{font-size:clamp(16px,1.25vw,19px)}selector p{margin:0;font-size:inherit}' });
 
-// btn-dark (globals.css:129-151): pill escura, seta em círculo branco; hover levanta + seta desliza ↗
 const numBtn = WK('button', 'x-num-cta', { text: 'Falar com um especialista', link: { url: '#contato', is_external: '', nofollow: '' },
   selected_icon: { value: 'fas fa-arrow-right', library: 'fa-solid' }, icon_align: 'right',
   background_color: T.ink, button_text_color: T.white, border_radius: rad(99), text_padding: bx(8, 8, 8, 24),
@@ -423,7 +367,6 @@ const kpiIntro2 = Cn(true, { content_width: 'full',
   custom_css: 'selector>.e-con-inner,selector{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(32px,5vw,72px);align-items:end;margin-bottom:clamp(40px,5vw,64px)}' +
     '@media(max-width:860px){selector>.e-con-inner,selector{grid-template-columns:1fr;gap:20px;align-items:start}}' }, [kpiHead, kpiSide]);
 
-// ---- KpiCarousel (widget HTML): scroll-driven + setas + dots (KpiCarousel.js + globals.css:289-314) ----
 const KPI_S2 = [
   { v: '2', l: 'Escritórios', d: 'Brasil e Portugal, presença nos dois lados da operação, na origem e no destino.', photo: 'field' },
   { v: 'Semanal', l: 'Relatório de preços', d: 'Panorama dos principais produtos toda semana, com histórico e tendência para negociar com base em dado.', photo: 'warehouse' },
@@ -475,9 +418,7 @@ const numInner = Cn(true, { content_width: 'boxed', boxed_width: U(1220), paddin
 const numeros = Cn(false, { content_width: 'full', background_background: 'classic', background_color: T.paper,
   custom_css: 'selector{padding:clamp(56px,6vw,92px) 0}' }, [numInner]);
 
-// ================= SEÇÃO 3 · PROBLEMA (ledger 2-col) — page.js:87 + globals.css:398 =================
 const P = I18N.pt.prob;
-// prob2-title two-tone (globals.css:399): parte final em .muted (steel)
 const probTitle = WK('heading', 'x-prob-title', { title: `${P.ta} <span class="muted">${P.tb}</span>`, header_size: 'h2',
   title_color: T.ink, typography_typography: 'custom', typography_font_family: 'Geist', typography_font_weight: '600',
   typography_letter_spacing: U(-0.038, 'em'), typography_line_height: U(1.06, 'em'), _margin: bx(16, 0, 18, 0),
@@ -515,7 +456,6 @@ const probInner = Cn(true, { content_width: 'boxed', boxed_width: U(1220), paddi
 const problema = Cn(false, { content_width: 'full', background_background: 'classic', background_color: T.paper,
   custom_css: 'selector{padding:clamp(80px,9vw,140px) 0}' }, [probInner]);
 
-// helper btn-dark (pill escura + seta em círculo branco, hover levanta + desliza) — globals.css:129
 const btnDark = (text, key, href) => WK('button', key, { text, link: { url: href || '#contato', is_external: '', nofollow: '' },
   selected_icon: { value: 'fas fa-arrow-right', library: 'fa-solid' }, icon_align: 'right',
   background_color: T.ink, button_text_color: T.white, border_radius: rad(99), text_padding: bx(8, 8, 8, 24),
@@ -525,13 +465,10 @@ const btnDark = (text, key, href) => WK('button', key, { text, link: { url: href
     'selector .elementor-button-icon{width:34px;height:34px;border-radius:50%;background:#fff;color:#0b1631;display:grid;place-items:center;margin:0;transition:transform .35s cubic-bezier(.22,1,.36,1)}' +
     'selector .elementor-button-icon i,selector .elementor-button-icon svg{font-size:15px;width:15px;transform:rotate(-45deg)}' +
     'selector .elementor-button:hover .elementor-button-icon i,selector .elementor-button:hover .elementor-button-icon svg{transform:rotate(-45deg) translate(3px,-3px)}' });
-// boxed_width 1156 = replica o `.wrap` oficial (max-width 1220 com padding lateral 32 = conteúdo 1156).
-// No Elementor o padding fica FORA do inner max-width, então o inner precisa ser 1156, não 1220.
 const boxed = (kids) => Cn(true, { content_width: 'boxed', boxed_width: U(1156), padding: bx(0, 32, 0, 32) }, kids);
 const secPaper = (kids, cssExtra) => Cn(false, { content_width: 'full', background_background: 'classic', background_color: T.paper,
   custom_css: 'selector{padding:clamp(80px,9vw,140px) 0}' + (cssExtra || '') }, [boxed(kids)]);
 
-// ================= SEÇÃO 4 · SOLUÇÃO (zig-zag foto) — page.js:112 + globals.css:411 =================
 const SOL = { kicker: 'Sua equipe de compras decide com informação. Sua produção recebe com previsibilidade.',
   items: [{ t: 'Fornecedores qualificados', d: 'Rede homologada por desempenho real.' }, { t: 'Dados de mercado', d: 'Preço atualizado, com histórico e tendência.' }, { t: 'Acompanhamento completo', d: 'Da origem ao destino, sem pontos cegos.' }, { t: 'Melhor momento de compra', d: 'Indicadores e critérios de venda apontam a melhor data para comprar.' }] };
 const SOL_IC = [
@@ -575,7 +512,6 @@ const sol2 = Cn(true, { content_width: 'full', custom_css:
   '@media(max-width:1000px){selector{grid-template-columns:1fr;gap:clamp(28px,5vw,44px)}}' }, [solMedia, solBody]);
 const solucao = secPaper([sol2]);
 
-// helper SectionIntro (eyebrow esq / headline two-tone dir + badge) — Bits.js:20 + globals.css:377
 const sectionIntro = (eyebrow, ebKey, titleHTML, titleKey, badge, badgeKey) => {
   const eb = eyebrowW(eyebrow, ebKey);
   const h2 = WK('heading', titleKey, { title: titleHTML, header_size: 'h2', title_color: T.ink,
@@ -592,7 +528,6 @@ const sectionIntro = (eyebrow, ebKey, titleHTML, titleKey, badge, badgeKey) => {
     '@media(max-width:760px){selector{grid-template-columns:1fr;gap:14px}}' }, [left, right]);
 };
 
-// ================= SEÇÃO 5 · COMO FUNCIONA (Steps) — page.js:142 + globals.css:317 =================
 const HOW = [
   { k: 'Etapa 1', t: 'Diagnóstico de compras', d: 'Entendemos o que sua empresa compra, em que volume e com quais critérios.' },
   { k: 'Etapa 2', t: 'Cotação com dados', d: 'Apresentamos fornecedores homologados, com preços contextualizados pelo relatório de mercado.' },
@@ -612,7 +547,6 @@ const stepsSectionCSS =
   'selector .steps-rail-fill{position:absolute!important;left:0;top:0;width:100%!important;min-width:0;height:25%;background:linear-gradient(180deg,#0a3ea8,#2e6bf0);border-radius:2px;transition:height .6s cubic-bezier(.22,1,.36,1);padding:0!important}' +
   'selector .step-item{position:relative;display:flex!important;flex-direction:row;align-items:center;gap:16px!important;width:100%;padding:clamp(20px,2.4vw,30px) 0!important;border-bottom:1px solid #e4e8f2;cursor:pointer}' +
   'selector .step-item:last-child{border-bottom:none}' +
-  // dot do trilho = ::before do card (JS só alterna data-on)
   'selector .step-item::before{content:"";position:absolute;left:-34px;top:50%;width:11px;height:11px;border-radius:50%;background:#cdd6e6;transform:translateY(-50%);transition:all .35s cubic-bezier(.22,1,.36,1)}' +
   'selector .step-item[data-on="true"]::before{background:#0a3ea8;transform:translateY(-50%) scale(1.3);box-shadow:0 0 0 5px rgba(46,107,240,.15)}' +
   'selector .si-num{width:auto}selector .si-num,selector .si-num .elementor-heading-title{font-family:\'Geist Mono\',monospace;font-size:13px;color:#8492ac;transition:color .3s;margin:0}' +
@@ -621,7 +555,6 @@ const stepsSectionCSS =
   'selector .step-item:hover .si-title,selector .step-item[data-on="true"] .si-title,selector .step-item:hover .si-title .elementor-heading-title,selector .step-item[data-on="true"] .si-title .elementor-heading-title{color:#0b1631}' +
   'selector .si-go{width:auto;color:#0a3ea8;opacity:0;transform:translateX(-6px);transition:all .35s cubic-bezier(.22,1,.36,1);display:inline-flex;line-height:0}selector .si-go p{margin:0;line-height:0;display:inline-flex}' +
   'selector .step-item[data-on="true"] .si-go{opacity:1;transform:none}' +
-  // card visual (HTML widget) — precisa esticar no grid
   'selector .sv-holder{height:100%}selector .sv-holder .elementor-widget-container{height:100%}' +
   'selector .steps-visual{position:relative;height:100%;border-radius:26px;padding:clamp(28px,3.5vw,46px);overflow:hidden;display:flex;flex-direction:column;justify-content:center;min-height:340px;background:radial-gradient(130% 120% at 88% 8%,#1650c8 0%,transparent 46%),linear-gradient(150deg,#0a3ea8 0%,#071c56 78%);box-shadow:0 34px 70px -30px rgba(10,40,120,.5)}' +
   'selector .sv-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.05);transition:opacity .9s cubic-bezier(.22,1,.36,1),transform 7s cubic-bezier(.22,1,.36,1);z-index:0}' +
@@ -638,8 +571,6 @@ const stepsSectionCSS =
   'selector .sv-dots span{width:22px;height:4px;border-radius:4px;background:rgba(255,255,255,.25);cursor:pointer;transition:all .35s}selector .sv-dots span.on{background:#fff;width:36px}' +
   '@media(max-width:1000px){selector .steps2{grid-template-columns:1fr}}';
 const stepsJS = `function sinit(){var root=document.querySelector('.steps2');if(!root||root.__s)return;root.__s=1;var PH=${JSON.stringify(STEP_PH)},IC=${JSON.stringify(STEP_IC)},V='${WPUP}';function curD(){var l=window.__XL||document.documentElement.getAttribute('lang')||'pt';return (window.__XS&&window.__XS[l]&&window.__XS[l].how&&window.__XS[l].how.steps)||${JSON.stringify(HOW)};}var D=curD();var n=D.length,active=0,paused=false,timer=0;var items=root.querySelectorAll('.step-item'),fill=root.querySelector('.steps-rail-fill'),photos=root.querySelectorAll('.sv-photo'),dots=root.querySelectorAll('.sv-dots span'),num=root.querySelector('.sv-num'),ic=root.querySelector('.sv-ic'),h3=root.querySelector('.steps-visual h3'),p=root.querySelector('.steps-visual p'),meta=root.querySelector('.sv-meta'),inner=root.querySelector('.sv-inner');function pad(x){return('0'+x).slice(-2);}function render(){items.forEach(function(it,i){it.setAttribute('data-on',i===active);var st=it.querySelector('.si-title');if(st&&D[i])st.textContent=D[i].t;});fill.style.height=(((active+1)/n)*100)+'%';photos.forEach(function(ph,i){ph.className='sv-photo'+(i===active?' on':'');});dots.forEach(function(d,i){d.className=i===active?'on':'';});num.textContent=pad(active+1);ic.innerHTML=IC[active];h3.textContent=D[active].t;p.textContent=D[active].d;meta.textContent=D[active].k;inner.style.animation='none';void inner.offsetWidth;inner.style.animation='svIn .5s cubic-bezier(.22,1,.36,1)';}items.forEach(function(it,i){it.addEventListener('click',function(){active=i;render();});});dots.forEach(function(d,i){d.addEventListener('click',function(){active=i;render();});});root.addEventListener('mouseenter',function(){paused=true;});root.addEventListener('mouseleave',function(){paused=false;});var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!timer){timer=setInterval(function(){if(!paused){active=(active+1)%n;render();}},4200);}else if(!e.isIntersecting&&timer){clearInterval(timer);timer=0;}});},{threshold:.4});io.observe(root);document.addEventListener('xlang',function(){D=curD();render();});render();}if(document.readyState!=='loading')sinit();else document.addEventListener('DOMContentLoaded',sinit);`;
-// lista de etapas NATIVA: cada step-item = container clicável (stepsJS liga o click via .step-item);
-// dot = ::before do container; rail/fill = containers (JS seta fill.style.height)
 const STEP_GO = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const stepRow = (s, i) => Cn(false, { content_width: 'full', css_classes: 'step-item' }, [
   WK('heading', 'si-num', { title: String(i + 1).padStart(2, '0'), header_size: 'div' }),
@@ -648,7 +579,6 @@ const stepRow = (s, i) => Cn(false, { content_width: 'full', css_classes: 'step-
 const stepsRail = Cn(false, { content_width: 'full', css_classes: 'steps-rail' }, [
   Cn(false, { content_width: 'full', css_classes: 'steps-rail-fill' }, [])]);
 const stepsList = Cn(false, { content_width: 'full', css_classes: 'steps-list' }, [stepsRail, ...HOW.map((s, i) => stepRow(s, i))]);
-// card visual = HTML (crossfade de fotos + svIn + conteúdo trocado pelo stepsJS = elemento animado)
 const stepsVisual = W('html', { _css_classes: 'sv-holder', html:
   '<div class="steps-visual">' +
   STEP_PH.map((ph, i) => `<img class="sv-photo${i === 0 ? ' on' : ''}" src="${photoUrl(ph)}" alt="">`).join('') +
@@ -663,12 +593,10 @@ const comoFunciona = Cn(false, { content_width: 'full', background_background: '
     sectionIntro('Como funciona', 'x-how-eyebrow', 'Do primeiro contato <span class="muted">ao contêiner entregue.</span>', 'x-how-title', 'Fluxo em validação', 'x-how-badge'),
     Cn(true, { content_width: 'full', custom_css: 'selector{margin-top:52px}' }, [steps2, stepsScript])])]);
 
-// helper RowProgress "01 ---- 0N" — globals.css:387
 const rowProgress = (total) => W('html', { html:
   `<div class="rowp"><span>01</span><span class="rowp-line"></span><span>${String(total).padStart(2, '0')}</span></div>` +
   '<style>.rowp{display:flex;align-items:center;gap:16px;margin-top:34px;font-family:\'Geist Mono\',monospace;font-size:12px;letter-spacing:.08em;color:#8492ac}.rowp-line{flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(90,103,132,.4) 0 7px,transparent 7px 13px)}</style>' });
 
-// ================= SEÇÃO 6 · PLATAFORMA (Pillars) — page.js:150 + globals.css:444 =================
 const PILL = [
   { icon: 'container', t: 'Rastreamento de contêineres', d: 'Acompanhe a posição e o status de cada carga em tempo real. Sua equipe sabe onde o produto está e quando chega, sem depender de e-mails e ligações.', metric: 'Cada evento do contêiner normalizado em marcos rastreáveis, atualizado em minutos.' },
   { icon: 'analytics', t: 'Relatório semanal de preços', d: 'Receba toda semana o panorama de preços dos principais produtos. Compare, planeje e negocie com base em dados de mercado, com histórico e tendência.', metric: 'Panorama semanal com histórico e tendência dos produtos que você compra.' },
@@ -705,7 +633,6 @@ const vizFor = (i) => {
   return '<div class="score-row">' + [['Qualidade', 94], ['Prazo', 88], ['Consistência', 91]].map(([l, v]) => `<div class="score-item"><div class="sl"><span>${l}</span><span>${v}</span></div><div class="score-bar"><span data-w="${v}"></span></div></div>`).join('') + '</div>';
 };
 const pillJS = `function pinit(){if(document.body.classList.contains('elementor-editor-active'))return;var root=document.querySelector('.pillars');if(!root||root.__p)return;root.__p=1;function run(){root.querySelectorAll('.pillar').forEach(function(p){p.classList.add('xin');});root.querySelectorAll('.viz-path').forEach(function(p){p.style.strokeDashoffset='0';});root.querySelectorAll('.viz-bars i').forEach(function(b,k){setTimeout(function(){b.style.height=b.getAttribute('data-h')+'%';},k*60);});root.querySelectorAll('.score-bar span').forEach(function(s,k){setTimeout(function(){s.style.width=s.getAttribute('data-w')+'%';},k*120);});root.querySelectorAll('.v[data-count]').forEach(function(el){var end=+el.getAttribute('data-count'),t0=null;function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/1200,1);el.textContent=Math.round(end*p).toLocaleString('pt-BR');if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);});}var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){run();io.disconnect();}});},{threshold:0,rootMargin:'0px 0px -12% 0px'});io.observe(root);}if(document.readyState!=='loading')pinit();else document.addEventListener('DOMContentLoaded',pinit);`;
-// card nativo: top(ícone+número) + título(h3) + desc + métrica + viz(HTML só o gráfico animado)
 const pillCard = (p, i) => Cn(false, { content_width: 'full', css_classes: 'pillar' }, [
   Cn(false, { content_width: 'full', css_classes: 'pillar-top' }, [
     WK('text-editor', 'pillar-ic', { editor: PILL_IC[p.icon] }),
@@ -715,7 +642,6 @@ const pillCard = (p, i) => Cn(false, { content_width: 'full', css_classes: 'pill
   WK('heading', 'pillar-metric', { title: p.metric, header_size: 'div' }),
   W('html', { html: vizFor(i), _css_classes: 'pillar-viz' })]);
 const pillGrid = Cn(false, { content_width: 'full', css_classes: 'pillars' }, PILL.map((p, i) => pillCard(p, i)));
-// 1 script observa .pillars e anima as vizzes (linha/barras/score/contador) dentro dos widgets HTML
 const pillScript = W('html', { html: `<script>${pillJS.replace(/<\/script>/g, "<\\/script>")}</script>` });
 const plataforma = Cn(false, { content_width: 'full', background_background: 'classic', background_color: T.paper,
   custom_css: pillSectionCSS }, [boxed([
@@ -724,7 +650,6 @@ const plataforma = Cn(false, { content_width: 'full', background_background: 'cl
     rowProgress(PILL.length),
     Cn(true, { content_width: 'full', custom_css: 'selector{display:flex;justify-content:center;margin-top:clamp(32px,4vw,48px)}' }, [btnDark('Acessar a plataforma', 'x-plat-cta', 'https://painel.jrspice.com')])])]);
 
-// ================= SEÇÃO 7 · PRODUTOS (grid editorial) — page.js:162 + globals.css:473 =================
 const PROD = [
   { photo: 'frutas-secas', t: 'Frutas secas', items: ['Ameixa', 'Semente de abóbora'] },
   { photo: 'especiarias', t: 'Especiarias', items: ['Alho', 'Cebola', 'Canela', 'Orégano', 'Cominho', 'Mostarda', 'Sal rosa do Himalaia', 'Gengibre'] },
@@ -733,11 +658,8 @@ const PROD = [
   { photo: 'aditivos', t: 'Aditivos', items: ['Goma guar', 'Glutamato monossódico'] },
   { photo: 'naturais', t: 'Naturais', items: ['Funghi', 'Açúcar de coco', 'Coco ralado', 'Farinha de coco', 'Leite de coco em pó'] }];
 const PARTNERS = [{ logo: `${WPUP}/brazilcoa-2.png`, name: 'Brazilcoa', tag: 'Cacau' }, { logo: `${WPUP}/sacconi-2.png`, name: 'Sacconi', tag: 'Pimenta-do-reino' }];
-// CSS da seção (vai no custom_css do container-seção — "configurações avançadas"). Escopado em `selector`,
-// ciente dos wrappers .elementor-* que o Elementor injeta em cada widget nativo.
 const prodSectionCSS =
   'selector{padding:clamp(80px,9vw,140px) 0}' +
-  // grid de cards
   'selector .prodx{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}' +
   'selector .prodx-card{position:relative;aspect-ratio:3/4;border-radius:26px;overflow:hidden;background:#0a3ea8;padding:0}' +
   'selector .prodx-img{position:absolute!important;inset:0;z-index:0;margin:0;width:100%;height:100%}' +
@@ -760,7 +682,6 @@ const prodSectionCSS =
   'selector .prodx-hover-t{width:auto}' +
   'selector .prodx-chips .elementor-widget-container>ul,selector .prodx-chips ul{display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px;margin:0;padding:0}' +
   'selector .prodx-chips li{list-style:none;font-size:12.5px;color:#eaf0ff;padding:5px 12px;border:1px solid rgba(255,255,255,.22);border-radius:100px;background:rgba(255,255,255,.07)}' +
-  // bloco parceiros brasileiros
   'selector .brz{margin-top:clamp(48px,6vw,88px);display:grid;grid-template-columns:1fr 1.1fr;gap:clamp(28px,4vw,60px);align-items:center}' +
   'selector .brz-head{max-width:none}' +
   'selector .brz-eb,selector .brz-eb p{font-family:\'Geist Mono\',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#2e6bf0;display:inline-flex;align-items:center;gap:12px;font-weight:500;margin:0}selector .brz-eb::before{content:"";width:7px;height:7px;background:#c4922e;transform:rotate(45deg);border-radius:1px}' +
@@ -772,9 +693,7 @@ const prodSectionCSS =
   'selector .brz-logo{width:auto;margin:0}selector .brz-logo img{max-width:180px;max-height:60px;width:auto;height:auto;object-fit:contain}' +
   'selector .brz-tag,selector .brz-tag p{font-family:\'Geist Mono\',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#0a3ea8;margin:0}selector .brz-tag{display:inline-flex;border:1px solid #d6e2ff;background:#eef3ff;padding:5px 12px;border-radius:100px;width:auto}' +
   '@media(max-width:860px){selector .prodx{grid-template-columns:repeat(2,1fr)}selector .brz{grid-template-columns:1fr}}';
-// arrow reutiliza o mesmo motivo dos botões (fa-arrow-right rotacionado -45)
 const PROD_ARROW = { value: 'fas fa-arrow-right', library: 'fa-solid' };
-// card nativo: image + num + cap(h3) + go(icon) + hover(container: título + chips)
 const prodCard = (c, i) => Cn(false, { content_width: 'full', css_classes: 'prodx-card' }, [
   W('image', { image: { url: `${WPUP}/${c.photo}-1.jpg`, id: '', alt: c.t, source: 'library', size: '' }, image_size: 'full', _css_classes: 'prodx-img' }),
   WK('heading', 'prodx-num', { title: String(i + 1).padStart(2, '0'), header_size: 'div' }),
@@ -785,7 +704,6 @@ const prodCard = (c, i) => Cn(false, { content_width: 'full', css_classes: 'prod
     WK('heading', 'prodx-hover-t', { title: c.t, header_size: 'div' }),
     WK('text-editor', 'prodx-chips', { editor: `<ul>${[...c.items, 'Etc.'].map((it) => `<li>${it}</li>`).join('')}</ul>` })])]);
 const prodGrid = Cn(false, { content_width: 'full', css_classes: 'prodx' }, PROD.map((c, i) => prodCard(c, i)));
-// bloco parceiros (brz) nativo
 const brzHead = Cn(false, { content_width: 'full', css_classes: 'brz-head', flex_direction: 'column', flex_align_items: 'flex-start' }, [
   WK('text-editor', 'brz-eb', { editor: '<p>Produtos brasileiros</p>' }),
   WK('heading', 'brz-title', { title: 'Parceiros na <span class="muted">origem.</span>', header_size: 'h3' }),
@@ -804,9 +722,6 @@ const prodHead = Cn(true, { content_width: 'full', custom_css:
 const produtos = Cn(false, { content_width: 'full', background_background: 'classic', background_color: T.paper, custom_css: prodSectionCSS },
   [boxed([prodHead, prodGrid, prodBrz, rowProgress(PROD.length)])]);
 
-// ================= SEÇÃO 8 · ORIGENS (mapa) — page.js:208 + globals.css:576 =================
-// Adaptação: mapa base (world-map.svg por URL) + marcadores de origem + card interativo (sem os 796KB de per-country paths)
-// itens = produtos por país (mostrados ao clicar/hover no mapa) — CONFERIR com o cliente antes de publicar
 const ORIG = [
   { c: 'Brasil', iso: 'br', x: 33, y: 70, desc: 'Origem e relacionamento direto com produtores, do campo ao contêiner.', cats: ['Especiarias', 'Naturais', 'Frutas secas'], items: ['Pimenta-do-reino', 'Cacau', 'Açúcar de coco', 'Gengibre'] },
   { c: 'Índia', iso: 'in', x: 69, y: 48, desc: 'Especiarias e ervas de referência mundial, com escala e variedade.', cats: ['Especiarias', 'Ervas', 'Aditivos'], items: ['Cominho', 'Gengibre', 'Camomila', 'Goma guar', 'Erva-doce'] },
@@ -817,9 +732,7 @@ const ORIG = [
   { c: 'Peru', iso: 'pe', x: 27, y: 63, desc: 'Produtos naturais e frutas secas dos Andes.', cats: ['Naturais', 'Frutas secas'], items: ['Gengibre', 'Semente de abóbora', 'Ameixa'] },
   { c: 'Turquia', iso: 'tr', x: 58, y: 40, desc: 'Ponte entre Europa e Ásia para vegetais desidratados e especiarias.', cats: ['Vegetais desidratados', 'Especiarias', 'Frutas secas'], items: ['Tomate', 'Pimentão', 'Orégano', 'Cominho', 'Ameixa'] },
   { c: 'Madagascar', iso: 'mg', x: 59, y: 70, desc: 'Produtos naturais de origem sustentável com qualidade e rastreabilidade.', cats: ['Especiarias', 'Naturais'], items: ['Canela', 'Gengibre', 'Coco ralado'] },
-  // CONFERIR com o cliente: origem citada no vídeo (28/jul) sem lista de itens — mostarda é o elo com o catálogo
   { c: 'Canadá', iso: 'ca', x: 22, y: 28, desc: 'Origem de referência em mostarda e grãos especiais do hemisfério norte.', cats: ['Especiarias'], items: ['Mostarda'] }];
-// bandeira da China embutida (data-URI) — as demais vêm da Media do WP
 const FLAG_INLINE = {
   cn: readFileSync(new URL('./assets/flag-cn.datauri.txt', import.meta.url), 'utf8').trim(),
   ca: readFileSync(new URL('./assets/flag-ca.datauri.txt', import.meta.url), 'utf8').trim(),
@@ -843,7 +756,6 @@ const origCSS =
   '.wmap-connector{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:visible}' +
   '.wmap-status{position:absolute;z-index:4;top:18px;left:18px;display:flex;align-items:center;gap:9px;padding:7px 13px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0b1631;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border-radius:100px;box-shadow:rgba(16,35,61,.08) 0 7px 20px}.wmap-status>span{width:7px;height:7px;border-radius:50%;background:#0a3ea8;box-shadow:0 0 0 4px rgba(46,107,240,.16)}' +
   '.wmap-card{position:absolute;z-index:5;right:clamp(16px,2vw,30px);top:clamp(16px,2vw,30px);width:min(300px,82%);background:#fff;border:1px solid #e4e8f2;border-radius:16px;padding:20px;text-align:left;box-shadow:0 22px 54px -20px rgba(5,20,44,.32)}' +
-  // o card foge do país selecionado: vai pra esquerda quando a origem está na metade direita do mapa
   '.wmap-card{transition:left .45s cubic-bezier(.22,1,.36,1),right .45s cubic-bezier(.22,1,.36,1)}' +
   '.wmap-card.is-left{right:auto;left:clamp(16px,2vw,30px)}' +
   '.wmap-card-head{display:flex;align-items:center;gap:12px}.wmap-flag{width:34px;height:24px;object-fit:cover;border-radius:5px;border:1px solid #e4e8f2;flex:none}' +
@@ -855,7 +767,6 @@ const origCSS =
   '.wmap-card-items{margin-top:14px;padding-top:14px;border-top:1px dashed #e4e8f2}' +
   '.wmap-items-wrap{display:flex;flex-wrap:wrap;gap:6px}' +
   '.wmap-item{font-size:12px;color:#0a3ea8;background:#eef3ff;border:1px solid #d6e2ff;border-radius:100px;padding:4px 10px;line-height:1.3}' +
-  // CTA para o sistema (pedido no vídeo 28/jul: mostrar alguns itens + "veja mais itens no sistema")
   '.wmap-more{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:12.5px;font-weight:500;color:#0a3ea8;text-decoration:none;transition:gap .25s}' +
   '.wmap-more:hover{gap:10px;color:#0b1631}.wmap-more svg{width:13px;height:13px}' +
   '.orig-note{margin-top:18px;font-size:12px;color:#8492ac}' +
@@ -864,7 +775,7 @@ const origLeaf = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" st
 const origChev = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const origJS = `function oinit(){var root=document.querySelector('.origw');if(!root||root.__o)return;root.__o=1;var V='${WPUP}',LEAF=${JSON.stringify(origLeaf)},CH=${JSON.stringify(origChev)};var base=${JSON.stringify(ORIG.map((o) => ({ c: o.c, iso: o.iso, flag: flagUrl(o.iso), desc: o.desc, cats: o.cats, items: o.items })))};function curD(){var l=window.__XL||document.documentElement.getAttribute('lang')||'pt';var s=window.__XS&&window.__XS[l]&&window.__XS[l].orig;return s?s.countries.map(function(c,i){return {c:c.c,iso:base[i].iso,flag:base[i].flag,desc:c.desc,cats:c.cats,items:c.items||base[i].items};}):base;}var D=curD();var sel=0;var chips=root.querySelectorAll('.orig-chip'),paths=root.querySelectorAll('.wc.served'),card=root.querySelector('.wmap-card'),svg=root.querySelector('.wmap'),panel=root.querySelector('.wmap-panel'),conn=root.querySelector('.wmap-connector');var isoIdx={};base.forEach(function(b,i){isoIdx[b.iso]=i;});function side(iso){if(!svg||!panel||!card)return;var p=svg.querySelector('[data-iso="'+iso+'"]');if(!p)return;var pr=panel.getBoundingClientRect(),b=p.getBoundingClientRect();if(!pr.width||!b.width)return;var cx=(b.left+b.width/2-pr.left)/pr.width;card.classList.toggle('is-left',cx>0.55);}
 function drawConn(iso){if(!conn||!svg||!panel||!card)return;var p=svg.querySelector('[data-iso="'+iso+'"]');if(!p)return;var pr=panel.getBoundingClientRect();var b=p.getBoundingClientRect();var cr=card.getBoundingClientRect();if(!pr.width||!b.width){conn.innerHTML='';return;}var dx=b.left+b.width/2-pr.left,dy=b.top+b.height/2-pr.top;var cx=cr.left-pr.left,cy=cr.top+cr.height/2-pr.top;if(cx<dx)cx=cr.right-pr.left;var mx=(dx+cx)/2;conn.setAttribute('viewBox','0 0 '+pr.width+' '+pr.height);conn.setAttribute('width',pr.width);conn.setAttribute('height',pr.height);conn.innerHTML='<circle cx="'+dx+'" cy="'+dy+'" r="12" fill="#0a3ea8" opacity="0.16"/><path d="M '+dx+' '+dy+' C '+mx+' '+dy+', '+mx+' '+cy+', '+cx+' '+cy+'" fill="none" stroke="#0a3ea8" stroke-width="1.6" opacity="0.5" stroke-linecap="round"/><circle cx="'+dx+'" cy="'+dy+'" r="5" fill="#0a3ea8" stroke="#fff" stroke-width="2"/>';}function render(){var d=D[sel];chips.forEach(function(c,i){c.setAttribute('data-on',i===sel);if(D[i])c.textContent=D[i].c;});paths.forEach(function(p){p.setAttribute('data-on',p.getAttribute('data-iso')===d.iso?'true':'false');});card.querySelector('.wmap-flag').src=d.flag||(V+'/flag-'+d.iso+'.png');card.querySelector('.wmap-card-c').textContent=d.c;card.querySelector('.wmap-card-desc').textContent=d.desc;card.querySelector('.wmap-lines-wrap').innerHTML=d.cats.map(function(ct){return '<a class="wmap-line-row" href="#produtos"><span class="wmap-line-ic">'+LEAF+'</span><span class="wmap-line-t">'+ct+'</span><span class="wmap-line-go">'+CH+'</span></a>';}).join('');var iw=card.querySelector('.wmap-items-wrap');if(iw)iw.innerHTML=(d.items||[]).map(function(it){return '<span class="wmap-item">'+it+'</span>';}).join('');side(d.iso);drawConn(d.iso);}function statics(){var l=window.__XL||document.documentElement.getAttribute('lang')||'pt';var s=window.__XS&&window.__XS[l]&&window.__XS[l].orig;if(!s)return;var st=root.querySelector('.wmap-status');if(st){var n=st.childNodes[st.childNodes.length-1];if(n&&n.nodeType===3)n.textContent=s.status;}var lg=root.querySelectorAll('.wmap-legend span');[s.legendA,s.legendO].forEach(function(v,i){if(lg[i]){var n2=lg[i].childNodes[lg[i].childNodes.length-1];if(n2&&n2.nodeType===3)n2.textContent=v;}});var lb=root.querySelector('.wmap-card-lines .wmap-card-lbl');if(lb)lb.textContent=s.linesL;var lb2=root.querySelector('.wmap-items-lbl');if(lb2&&s.itemsL)lb2.textContent=s.itemsL;var no=root.querySelector('.orig-note');if(no)no.textContent=s.note;}chips.forEach(function(c,i){c.addEventListener('click',function(){sel=i;render();});});paths.forEach(function(p){var iso=p.getAttribute('data-iso');function pick(){if(isoIdx[iso]!=null){sel=isoIdx[iso];render();}}p.addEventListener('click',pick);p.addEventListener('mouseenter',pick);});window.addEventListener('resize',function(){drawConn(D[sel].iso);});document.addEventListener('xlang',function(){D=curD();statics();render();});statics();render();setTimeout(function(){drawConn(D[sel].iso);},140);}if(document.readyState!=='loading')oinit();else document.addEventListener('DOMContentLoaded',oinit);`;
-const SERVED_ISO = ORIG.map((o) => o.iso); // br,in,vn,id,lk,pe,tr,mg (ordem = ORIG)
+const SERVED_ISO = ORIG.map((o) => o.iso);
 const mapPaths = WORLD.countries.map((c) => { const s = SERVED_ISO.indexOf(c.id) >= 0; return `<path d="${c.d}"${s ? ` class="wc served" data-iso="${c.id}"` : ' class="wc"'}/>`; }).join('');
 const origWidget = W('html', { html:
   '<div class="origw">' +
@@ -883,10 +794,7 @@ const origHead = Cn(true, { content_width: 'full', flex_direction: 'column', cus
   eyebrowW('Presença global', 'x-orig-eyebrow'),
   WK('heading', 'x-orig-title', { title: 'Da origem à <span class="muted">sua linha de produção.</span>', header_size: 'h2', title_color: T.ink, typography_typography: 'custom', typography_font_family: 'Geist', typography_font_weight: '600', typography_letter_spacing: U(-0.04, 'em'), typography_line_height: U(1.04, 'em'), _margin: bx(16, 0, 14, 0), align: 'center', custom_css: 'selector .elementor-heading-title{font-size:clamp(26px,3.3vw,44px);text-align:center}selector .muted{color:#8492ac}' }),
   WK('text-editor', 'x-orig-text', { editor: '<p>Mais de 150 produtos em 15 países, com escritórios no Brasil e em Portugal. Selecione uma origem no mapa e veja as linhas e os produtos que trabalhamos em cada mercado.</p>', text_color: T.slate, typography_typography: 'custom', typography_font_family: 'Geist', typography_line_height: U(1.6, 'em'), align: 'center', custom_css: 'selector{max-width:56ch;margin:0 auto}selector .elementor-widget-container{font-size:clamp(16px,1.25vw,19px);text-align:center}selector p{margin:0;font-size:inherit}' })]);
-// (a seção "Presença global" separada foi FUNDIDA aqui — PDF Website Revisado: mesclar textos e apagar a de baixo)
-// offices + stats são montados abaixo (globOfficesRow/globStats) e entram nesta mesma seção.
 
-// ================= SEÇÃO 9 · PRESENÇA GLOBAL (glob2) — page.js:211 + globals.css:659 =================
 const OFFICE_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M15 21V9h3a1 1 0 0 1 1 1v11M8 8h2M8 12h2M8 16h2"/></svg>';
 const STAT_IC = {
   globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg>',
@@ -914,14 +822,12 @@ const globSectionCSS =
   '@media(max-width:900px){selector .glob2{grid-template-columns:1fr}selector .glob2-l{max-width:none}selector .glob2-stats{grid-template-columns:1fr}selector .glob2-stat+.glob2-stat{border-left:0;border-top:1px solid #e4e8f2}}';
 const OFFICES = [{ city: 'Brasil', role: 'Mercado interno de pimenta e cacau' }, { city: 'Portugal', role: 'Mercado internacional de outros produtos alimentícios' }];
 const GSTATS = [{ icon: 'globe', v: '15 países', l: 'com atuação', r: false }, { icon: 'handshake', v: '200+ parceiros', l: 'comerciais ativos', r: false }, { icon: 'box', v: '4 continentes', l: 'Exportações para', r: true }];
-// ícone inline (SVG cru dentro de text-editor nativo = editável + fiel ao stroke original)
 const svgIconW = (svg, cls) => WK('text-editor', cls, { editor: svg });
 const globOffice = (o) => Cn(false, { content_width: 'full', css_classes: 'glob2-office' }, [
   svgIconW(OFFICE_IC, 'glob2-oic'),
   Cn(false, { content_width: 'full', css_classes: 'glob2-otext', flex_direction: 'column', flex_align_items: 'flex-start' }, [
     WK('heading', 'glob2-oname', { title: o.city, header_size: 'div' }),
     WK('text-editor', 'glob2-orole', { editor: `<p>${o.role}</p>` })])]);
-// escritórios (Brasil/Portugal) — texto de apoio já vive no cabeçalho fundido; aqui fica só a linha de escritórios + a arte
 const globLeft = Cn(false, { content_width: 'full', css_classes: 'glob2-l', flex_direction: 'column', flex_align_items: 'flex-start' }, [
   WK('heading', 'x-glob-title glob2-h', { title: 'Operação no Brasil <span class="muted">e na Europa.</span>', header_size: 'h3' }),
   Cn(false, { content_width: 'full', css_classes: 'glob2-offices', flex_direction: 'column' }, OFFICES.map(globOffice))]);
@@ -934,14 +840,12 @@ const globStat = (s) => Cn(false, { content_width: 'full', css_classes: 'glob2-s
     s.r ? [WK('text-editor', 'glob2-sl', { editor: `<p>${s.l}</p>` }), WK('heading', 'glob2-sv', { title: s.v, header_size: 'div' })]
         : [WK('heading', 'glob2-sv', { title: s.v, header_size: 'div' }), WK('text-editor', 'glob2-sl', { editor: `<p>${s.l}</p>` })])]);
 const globStats = Cn(false, { content_width: 'full', css_classes: 'glob2-stats' }, GSTATS.map(globStat));
-// SEÇÃO ÚNICA FUNDIDA (âncora #presenca): cabeçalho + mapa de origens + escritórios + números
 const presenca = Cn(false, { content_width: 'full', _element_id: 'presenca', background_background: 'classic', background_color: T.paper,
   custom_css: 'selector{padding:clamp(80px,9vw,140px) 0}' + globSectionCSS +
     'selector .glob2{margin-top:clamp(40px,5vw,72px)!important;align-items:center}' +
     'selector .glob2-h{margin:0 0 8px!important}selector .glob2-h .elementor-heading-title{font-size:clamp(22px,2.4vw,32px)}' },
   [boxed([origHead, Cn(true, { content_width: 'full', custom_css: 'selector{margin-top:32px}' }, [origWidget]), glob2, globStats])]);
 
-// ================= SEÇÃO 10 · SOBRE (About) — page.js:251 + globals.css:528 =================
 const aboutSectionCSS =
   'selector{padding:clamp(80px,9vw,140px) 0}' +
   'selector .aboutw{gap:0!important;padding:0!important}' +
@@ -958,7 +862,6 @@ const aboutSectionCSS =
   'selector .about-card-txt,selector .about-card-txt p{font-size:14.5px;line-height:1.55;color:#5a6784;max-width:44ch;margin:0}' +
   'selector .about-team-txt,selector .about-team-txt p{max-width:34ch}' +
   'selector .about-tlwrap p{margin:0}selector .about-timeline{margin-top:22px;position:relative}selector .about-timeline::before{content:"";position:absolute;left:5px;top:18px;bottom:18px;width:2px;background:#e4e8f2}' +
-  // vira tabela: ponto · ano · contratos · toneladas · US$ (marcos ocupam as 3 colunas de dado)
   'selector .about-tl-row{display:grid;grid-template-columns:11px 44px minmax(0,1fr) 62px 66px 84px;align-items:center;gap:10px;padding:11px 0;position:relative}selector .about-tl-row+.about-tl-row{border-top:1px solid #e4e8f2}' +
   'selector .about-tl-row.is-nota .about-tl-t{grid-column:3/6}' +
   'selector .about-tl-mk{min-width:0}selector .about-tl-mk .about-tl-badge{max-width:100%}' +
@@ -969,7 +872,6 @@ const aboutSectionCSS =
   'selector .about-tl-row.is-nota .about-tl-badge{justify-self:end}' +
   'selector .about-tl-dot{width:11px;height:11px;border-radius:50%;background:#d6e2ff;border:2px solid #0a3ea8;flex:none;box-shadow:0 0 0 4px #fff;position:relative;z-index:1}selector .about-tl-row:last-child .about-tl-dot{background:#c4922e;border-color:#c4922e;box-shadow:0 0 0 4px #faf3e4}' +
   'selector .about-tl-y{font-family:\'Geist Mono\',monospace;font-size:12px;color:#8492ac;min-width:44px}selector .about-tl-t{font-size:15px;color:#0b1631;font-weight:500;flex:1}' +
-  // Missão · Visão · Valores
   'selector .about-mvv{display:grid!important;grid-template-columns:repeat(3,1fr);gap:16px!important;margin-top:16px!important;padding:0!important}' +
   'selector .about-mvv-card{background:#fff;border:1px solid #e4e8f2;border-radius:22px;padding:26px 24px!important;gap:0!important;box-shadow:0 6px 16px -8px rgba(4,16,50,.12)}' +
   'selector .about-mvv-h,selector .about-mvv-h .elementor-heading-title{font-family:\'Geist Mono\',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#0a3ea8;margin:0 0 12px}' +
@@ -986,9 +888,6 @@ const aboutSectionCSS =
   'selector .about-ava{width:44px;height:44px;border-radius:50%;background:#fff;color:#0a3ea8;display:flex;align-items:center;justify-content:center;flex:none;border:1px solid #d6e2ff;box-shadow:0 0 0 3px #eef3ff}' +
   'selector .about-member-b h4{font-size:14px;font-weight:700;color:#0b1631;line-height:1.25;margin:0}selector .about-member-b span{font-size:12.5px;color:#8492ac}' +
   '@media(max-width:900px){selector .about-cards{grid-template-columns:1fr}selector .about-team-inner{grid-template-columns:1fr;gap:24px!important}selector .about-team-grid{grid-template-columns:repeat(2,1fr)}}';
-// trajetória real (PDF Website Revisado)
-// Trajetória com volume movimentado por ano (planilha do cliente, vídeo 28/jul).
-// n = contratos · t = toneladas · v = US$ vendido. Linhas sem números = marco (texto ocupa a largura).
 const A_MILE = [
   { y: '2009', nota: 'Início da atividade no mercado brasileiro' },
   { y: '2017', n: '2', t: '44', v: '81.360', b: '1ª importação' },
@@ -1009,7 +908,6 @@ const icCalSm = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
 const icTeam = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3 2.7-5 6-5s6 2 6 5M16 5.2a3.2 3.2 0 0 1 0 6M18 20c0-2.4-1-4-2.5-4.6"/></svg>';
 const icUser = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>';
 const globeArt = '<svg class="about-globe" viewBox="0 0 200 200" fill="none" aria-hidden="true"><g stroke="#2e6bf0" stroke-width="0.8" opacity="0.4" fill="none"><circle cx="100" cy="100" r="72"/><ellipse cx="100" cy="100" rx="72" ry="28"/><ellipse cx="100" cy="100" rx="72" ry="52"/><ellipse cx="100" cy="100" rx="28" ry="72"/><ellipse cx="100" cy="100" rx="52" ry="72"/><path d="M28 100h144M100 28v144"/></g><g fill="#2e6bf0"><circle cx="152" cy="66" r="4"/><circle cx="128" cy="118" r="3.4"/><circle cx="74" cy="80" r="3"/></g></svg>';
-// cabeçalho do card (ícone + label + texto) — reutilizado nos 3 cards
 const aboutHead = (ic, lbl, txt, txtCls) => Cn(false, { content_width: 'full', css_classes: 'about-card-head' }, [
   svgIconW(ic, 'about-card-ic'),
   Cn(false, { content_width: 'full', css_classes: 'about-card-body', flex_direction: 'column', flex_align_items: 'flex-start' }, [
@@ -1039,7 +937,6 @@ const aboutRoot = Cn(false, { content_width: 'full', css_classes: 'aboutw', flex
       WK('text-editor', 'about-globewrap', { editor: globeArt }),
       aboutHead(icCal, 'Feiras e eventos', 'Presença nas principais feiras internacionais de alimentos e ingredientes: SIAL, Food Ingredients, Anuga e Fispal.'),
       WK('text-editor', 'about-fairwrap', { editor: aboutFairsHTML })])]),
-  // Missão · Visão · Valores (texto institucional enviado pelo cliente, 28/jul)
   Cn(false, { content_width: 'full', css_classes: 'about-mvv' }, [
     ['Missão', 'Fortalecer conexões para o crescimento sustentável e mútuo, organizando informações e gerando soluções com agilidade.'],
     ['Visão', 'Ser referência mundial em inovação para negócios internacionais, com excelência no segmento alimentício, liderando o caminho para o futuro da indústria alimentar global.'],
@@ -1053,7 +950,6 @@ const aboutRoot = Cn(false, { content_width: 'full', css_classes: 'aboutw', flex
       WK('text-editor', 'about-teamwrap', { editor: aboutTeamHTML })])])]);
 const sobre = Cn(false, { content_width: 'full', background_background: 'classic', background_color: T.paper, custom_css: aboutSectionCSS }, [boxed([aboutRoot])]);
 
-// ================= SEÇÃO 11 · FAQ (dark accordion) — page.js:254 + globals.css:693 =================
 const FAQ = [
   { q: 'Quais produtos a Xpice negocia?', a: 'Trabalhamos com mais de 150 produtos em 15 países diferentes, nas linhas de especiarias, ervas, vegetais desidratados, aditivos e produtos naturais. Cada categoria conta com fornecedores homologados.' },
   { q: 'Como funciona o rastreamento de contêineres?', a: 'Cada carga é acompanhada em tempo real na plataforma, com eventos normalizados em marcos rastreáveis. Sua equipe sabe onde o produto está e quando chega, sem depender de e-mails e ligações.' },
@@ -1075,8 +971,6 @@ const faqSectionCSS =
   'selector .faq-a{overflow:hidden;max-height:0;transition:max-height .45s cubic-bezier(.22,1,.36,1);width:100%}selector .faq-a .elementor-widget-container{width:100%}selector .faq-a-inner{padding:0 40px 26px 0;color:#b9c4dd;font-size:15px;line-height:1.65}' +
   '@media(max-width:1000px){selector .faq-grid{grid-template-columns:1fr}}';
 const faqJS = `function finit(){var root=document.querySelector('.faqw');if(!root||root.__f)return;root.__f=1;var items=root.querySelectorAll('.faq-item');items.forEach(function(it,i){var q=it.querySelector('.faq-q'),a=it.querySelector('.faq-a'),inner=it.querySelector('.faq-a-inner');if(i===0){it.setAttribute('data-open','true');a.style.maxHeight=inner.scrollHeight+'px';}q.addEventListener('click',function(){var open=it.getAttribute('data-open')==='true';items.forEach(function(o){o.setAttribute('data-open','false');o.querySelector('.faq-a').style.maxHeight='0px';});if(!open){it.setAttribute('data-open','true');a.style.maxHeight=inner.scrollHeight+'px';}});});}if(document.readyState!=='loading')finit();else document.addEventListener('DOMContentLoaded',finit);`;
-// itens do accordion NATIVOS: pergunta = text-editor com <p class="faq-q"> (classe no elemento INTERNO —
-// faqJS clica nele e o FirstT do i18n exige primeiro filho text-node); resposta = text-editor cujo wrapper é o .faq-a
 const faqItem = (f) => Cn(false, { content_width: 'full', css_classes: 'faq-item' }, [
   WK('text-editor', 'faq-qwrap', { editor: `<p class="faq-q">${f.q}</p>` }),
   WK('text-editor', 'faq-a', { editor: `<div class="faq-a-inner">${f.a}</div>` })]);
@@ -1092,7 +986,6 @@ const faqRoot = Cn(false, { content_width: 'full', css_classes: 'faqw', flex_dir
   faqScript]);
 const faq = Cn(false, { content_width: 'full', background_background: 'classic', background_color: T.navy900, custom_css: faqSectionCSS }, [boxed([faqRoot])]);
 
-// ================= SEÇÃO 12 · INSIGHTS (art-grid) — page.js:257 + globals.css:720 =================
 const ART = [
   { img: 'field', tag: 'Origem', title: 'Como avaliamos uma safra ainda na origem' },
   { img: 'grading', tag: 'Qualidade', title: 'O que separa um lote homologado de um comum' },
@@ -1110,7 +1003,6 @@ const artSectionCSS =
   'selector .art-morewrap{margin-top:16px!important;width:auto}selector .art-morewrap p{margin:0}' +
   'selector .art-more{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:#0a3ea8;font-weight:500}selector .art-more .ar{display:inline-block;transform:rotate(-45deg)}' +
   '@media(max-width:1000px){selector .art-grid{grid-template-columns:1fr 1fr}}@media(max-width:640px){selector .art-grid{grid-template-columns:1fr}}';
-// card nativo: media(imagem + tag) + body(h3 + "Ver todos" — classe art-more no span INTERNO: FirstT do i18n exige text-node primeiro)
 const artCard = (a) => Cn(false, { content_width: 'full', css_classes: 'art-card' }, [
   Cn(false, { content_width: 'full', css_classes: 'art-media' }, [
     W('image', { image: { url: photoUrl(a.img), id: '', alt: a.title, source: 'library', size: '' }, image_size: 'full' }),
@@ -1123,7 +1015,6 @@ const insights = Cn(false, { content_width: 'full', background_background: 'clas
   sectionIntro('Conteúdo', 'x-ins-eyebrow', 'Da origem ao destino, <span class="muted">por dentro da operação.</span>', 'x-ins-title', 'Conteúdo em preparação', 'x-ins-badge'),
   Cn(true, { content_width: 'full' }, [artGrid])])]);
 
-// ================= SEÇÃO 13 · CTA FINAL (cta-plain) — page.js:278 + globals.css:732 =================
 const btnGhost = (text, key, href) => WK('button', key, { text, link: { url: href, is_external: '', nofollow: '' },
   selected_icon: { value: 'fas fa-arrow-right', library: 'fa-solid' }, icon_align: 'right',
   background_color: 'rgba(0,0,0,0)', button_text_color: T.ink, border_radius: rad(99), text_padding: bx(8, 8, 8, 24),
@@ -1145,7 +1036,6 @@ const ctaFinal = Cn(false, { content_width: 'full', background_background: 'clas
   [Cn(true, { content_width: 'boxed', boxed_width: U(1220), padding: bx(0, 32, 0, 32), custom_css: 'selector{text-align:center}' },
     [Cn(true, { content_width: 'full', flex_direction: 'column', custom_css: 'selector{max-width:720px;margin:0 auto;align-items:center}' }, [ctaTitle, ctaLede, ctaBtns])])]);
 
-// ================= SEÇÃO 14 · FOOTER — page.js:292 + globals.css:742 =================
 const footSectionCSS =
   'selector{padding:76px 0 40px}' +
   'selector .footer-top{display:grid!important;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:40px!important;padding:0!important;width:100%}' +
@@ -1168,8 +1058,6 @@ const FOOT_SOCIAL =
   '<a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>' +
   '<a href="mailto:contato@xpice.com" aria-label="E-mail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></a>' +
   '</div>';
-// footer NATIVO: grid de containers; h4/links/tagline = rich-text (DOM igual pro langJS:
-// fh[0]=Menu fh[2]=Idioma via `.footer-top .footer-col h4`; 1ª col = links <a> em ordem)
 const footerTop = Cn(false, { content_width: 'full', css_classes: 'footer-top' }, [
   Cn(false, { content_width: 'full', css_classes: 'footer-logo', flex_direction: 'column', flex_align_items: 'flex-start' }, [
     W('image', { image: { url: `${WPUP}/xpice-logo-white.png`, id: '', alt: 'Xpice Connections', source: 'library', size: '' }, image_size: 'full' }),
@@ -1189,9 +1077,6 @@ const footerBottom = Cn(false, { content_width: 'full', css_classes: 'footer-bot
 const footer = Cn(false, { content_width: 'full', background_background: 'classic', background_color: T.navy900, custom_css: footSectionCSS },
   [boxed([footerTop, footerBottom])]);
 
-// ================= SMOOTH SCROLL + REVEAL (global) =================
-// Lenis (mesmo do site oficial) via CDN + IntersectionObserver que revela cada elemento com blur/fade/subida,
-// escalonado por seção; título do hero entra linha a linha. Degrada sem-JS e respeita prefers-reduced-motion.
 const revealJS = `(function(){if(window.__xrl)return;window.__xrl=1;if(document.body.classList.contains('elementor-editor-active'))return;var RM=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;`
   + `if(!RM){var ls=document.createElement('script');ls.src='https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js';ls.onload=function(){try{if(!window.Lenis)return;var l=new Lenis({duration:1.1,smoothWheel:true,wheelMultiplier:1,touchMultiplier:1.5});window.__lenis=l;function raf(t){l.raf(t);requestAnimationFrame(raf);}requestAnimationFrame(raf);document.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){var id=a.getAttribute('href');if(id&&id.length>1){var t=document.querySelector(id);if(t){e.preventDefault();l.scrollTo(t,{offset:-84});}}});});}catch(e){}};document.head.appendChild(ls);}`
   + `function init(){if(RM)return;var TA='.prodx-card,.pillar,.art-card,.about-card,.about-team-card,.glob2-stat,.glob2-office,.faq-item,.step-item,.kpi-card,.brz-card,.glob2-r,.about-member';`
@@ -1210,7 +1095,6 @@ const revealJS = `(function(){if(window.__xrl)return;window.__xrl=1;if(document.
   + `if(document.readyState!=='loading')init();else document.addEventListener('DOMContentLoaded',init);})();`;
 const revealSection = Cn(false, { content_width: 'full', custom_css: 'selector{padding:0;min-height:0}' }, [W('html', { html: `<script>${revealJS.replace(/<\/script>/g, "<\\/script>")}</script>` })]);
 
-// ================= ENVELOPE =================
 const content = [nav, hero, numeros, problema, solucao, comoFunciona, plataforma, produtos, presenca, sobre, faq, insights, ctaFinal, footer, revealSection];
 
 const out = {

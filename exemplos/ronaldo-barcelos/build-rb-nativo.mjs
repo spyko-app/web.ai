@@ -1,11 +1,6 @@
-// Gerador FIEL da Landing Page Ronaldo Barcelos como template JSON do Elementor (containers + widgets nativos).
-// Fonte da verdade: /Volumes/PortableSSD/ARQUIVOS/Landing Page RB/site (index.html + styles.css + script.js).
-// Regra (igual Xpice): texto/layout = nativo editável; animação/marquee/badge = widget HTML.
-// Alvo: ronaldobarcelos.com.br página 346 (Elementor 4.2.0).
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-// TODOS os assets já vivem na Media do WP (nada externo)
 const M = 'https://ronaldobarcelos.com.br/wp-content/uploads/2026/07';
 const IMG = {
   hero: `${M}/ronaldo-hero.jpg`,
@@ -19,14 +14,12 @@ const IMG = {
   genomics: `${M}/logo-genomics.svg`,
 };
 
-// ---- ids determinísticos ----
 let _n = 1;
 const id = () => {
   let h = 0x811c9dc5 ^ (_n++);
   h = Math.imul(h ^ (h >>> 15), 0x2545f491) >>> 0;
   return (h.toString(16) + '00000000').slice(0, 8);
 };
-// ---- helpers de settings (vocabulário real do Elementor) ----
 const U = (size, unit = 'px') => ({ unit, size, sizes: [] });
 const bx = (t, r, b, l) => ({ unit: 'px', top: `${t}`, right: `${r}`, bottom: `${b}`, left: `${l}`, isLinked: false });
 const W = (widgetType, settings) => ({ id: id(), elType: 'widget', widgetType, settings, elements: [], isInner: false });
@@ -35,7 +28,6 @@ const WK = (widgetType, key, settings) => W(widgetType, { ...settings, _css_clas
 const boxed = (kids) => Cn(true, { content_width: 'boxed', boxed_width: U(1280), padding: bx(0, 32, 0, 32) }, kids);
 const html = (h, key) => WK('html', key, { html: h });
 
-// ---- tokens (styles.css :root) ----
 const T = {
   bg: '#ECE3D7', bg2: '#E4D9CB', surface: '#F6F0E6', surface2: '#EFE6D8',
   gold: '#A85B41', gold2: '#C28C72', goldD: '#8B4630', rust: '#C9531F',
@@ -44,25 +36,18 @@ const T = {
   ff: "'DM Sans',system-ui,sans-serif", serif: "'Instrument Serif',Georgia,serif",
 };
 
-// ================= CSS GLOBAL DA PÁGINA (page_settings.custom_css) =================
 const PAGE_CSS =
   `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,400..600&family=Instrument+Serif:ital@0;1&display=swap');` +
   `body,.elementor-heading-title,.elementor-widget-text-editor,.elementor-button-text{font-family:${T.ff}}` +
   `p{margin:0}html{overflow-x:clip}body{overflow-x:visible;background:${T.bg};color:${T.paper};line-height:1.55;-webkit-font-smoothing:antialiased}` +
   `.rb a,.rb .elementor-button{text-decoration:none!important}.rb .elementor-button{box-shadow:none}` +
   `em{font-style:normal}` +
-  // Elementor 4.x (e_font_icon_svg) renderiza ícone como SVG inline e pinta por `fill` — sem isto o ícone sai BRANCO/invisível
   `.rb .elementor-button-icon svg,.rbpop .elementor-button-icon svg{fill:currentColor!important;width:1em;height:1em}` +
-  // barra do admin não pode cobrir a nav fixa
   `body.admin-bar .rbnav{top:32px}@media(max-width:782px){body.admin-bar .rbnav{top:46px}}` +
-  // texto do botão: sem isto a caixa do texto ESTICA na altura do ícone e a letra cola no topo (parece padding assimétrico)
   `.rb .elementor-button-content-wrapper,.rbpop .elementor-button-content-wrapper{align-items:center}` +
-  // imagem dentro de container de altura fixa: só os WRAPPERS herdam 100% — nunca o .rbfill (é ele que define a altura)
   `.rbfill>.elementor-widget-image,.rbfill .elementor-widget-container,.rbfill .elementor-widget-image a{height:100%!important;width:100%;line-height:0}` +
   `.rbfill img{width:100%!important;height:100%!important;display:block}` +
-  // serifa itálica de acento (usada em .big em, hero em, etc.)
   `.ser{font-family:${T.serif};font-style:italic;font-weight:400;color:${T.gold}}` +
-  // ---- botões ----
   `.rbtn .elementor-button{display:inline-flex;align-items:center;gap:.8em;font-size:14px;font-weight:600;letter-spacing:.02em;padding:11px 13px 11px 24px;border-radius:999px;border:1px solid ${T.line2};color:${T.gold};background:transparent;transition:.45s cubic-bezier(.22,.61,.36,1);white-space:nowrap}` +
   `.rbtn .elementor-button:hover{background:${T.gold};color:#FBF4EA;border-color:${T.gold};transform:translateY(-2px);box-shadow:0 16px 38px rgba(168,90,64,.28)}` +
   `.rbtn .elementor-button-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;flex:none;border:1px solid currentColor;font-size:13px;line-height:1;transition:.45s cubic-bezier(.22,.61,.36,1)}` +
@@ -71,7 +56,6 @@ const PAGE_CSS =
   `.rbtn-solid .elementor-button{background:${T.gold};border-color:${T.gold};color:#FBF4EA;padding:11px 22px;gap:0}` +
   `.rbtn-solid .elementor-button:hover{background:${T.goldD};border-color:${T.goldD};box-shadow:0 12px 30px rgba(139,70,48,.28)}` +
   `.rbtn-text .elementor-button{padding:16px 34px;gap:0}` +
-  // ---- nav ----
   `.rbnav{position:fixed!important;inset:0 0 auto 0;z-index:60;padding-block:18px!important;transition:.4s cubic-bezier(.22,.61,.36,1)}` +
   `.rbnav.stuck{padding-block:11px!important;background:rgba(237,227,215,.82);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 1px 0 ${T.line}}` +
   `.rbnav-inner{display:flex!important;flex-direction:row;align-items:center;gap:24px!important;padding:0!important}` +
@@ -85,7 +69,6 @@ const PAGE_CSS =
   `.rbnav-burger .elementor-button{background:none;border:0;padding:8px;color:${T.paper};box-shadow:none}` +
   `.rbnav-burger .elementor-button:hover{background:none;transform:none;box-shadow:none}` +
   `@media(max-width:680px){.rbnav-links,.rbnav-cta{display:none!important}.rbnav-burger{display:flex!important}}` +
-  // popup mobile
   `.rbpop-ov{position:fixed;inset:0;z-index:98;background:rgba(36,29,24,.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .3s}` +
   `.rbpop-ov.on{opacity:1;pointer-events:auto}` +
   `.rbpop{position:fixed!important;z-index:99;top:74px;left:16px;right:16px;background:${T.surface};border:1px solid ${T.line};border-radius:18px;padding:18px!important;box-shadow:0 30px 60px -20px rgba(36,29,24,.35);opacity:0;transform:translateY(-10px);pointer-events:none;transition:opacity .3s,transform .3s;gap:2px!important}` +
@@ -94,14 +77,11 @@ const PAGE_CSS =
   `.rbpop .elementor-button:hover{background:rgba(168,90,64,.08);color:${T.gold};transform:none;box-shadow:none}` +
   `.rbpop .rbpop-cta .elementor-button{background:${T.gold};color:#FBF4EA;justify-content:center;margin-top:8px;border-radius:999px}` +
   `.rbjs{position:absolute!important;width:0!important;height:0!important;min-height:0!important;overflow:hidden!important;pointer-events:none;flex:0 0 0!important;margin:0!important;padding:0!important}` +
-  // ---- reveal ----
   `.rb-on .rvl{opacity:0;transform:translateY(32px);filter:blur(6px);transition:opacity .9s cubic-bezier(.22,.61,.36,1),transform .9s cubic-bezier(.22,.61,.36,1),filter .9s cubic-bezier(.22,.61,.36,1)}` +
   `.rb-on .rvl.in{opacity:1;transform:none;filter:blur(0)}` +
   `.rvl[data-d="1"]{transition-delay:.1s}.rvl[data-d="2"]{transition-delay:.2s}.rvl[data-d="3"]{transition-delay:.3s}` +
   `@media(prefers-reduced-motion:reduce){.rb-on .rvl{opacity:1!important;transform:none!important;filter:none!important}}` +
-  // barra de progresso
   `.rbprog{position:fixed;top:0;left:0;height:2px;width:0;z-index:80;background:linear-gradient(90deg,${T.gold},${T.rust});box-shadow:0 0 12px rgba(168,90,64,.4);transition:width .1s linear}` +
-  // ---- mobile geral ----
   `@media(max-width:980px){` +
     `.rbhero-photo{width:min(44%,360px)!important;opacity:.92}` +
     `.rbwho-top,.rbwho-cols,.rbproof-stats,.rbplans,.rbredes,.rbfloors-layout,.rbfoot-grid,.rbwork-head{grid-template-columns:1fr!important}` +
@@ -110,17 +90,13 @@ const PAGE_CSS =
   `@media(max-width:680px){` +
     `.rbhero-photo{top:72px!important;width:min(70%,300px)!important;aspect-ratio:1/1}` +
     `.rbhero-left{padding-bottom:260px!important}` +
-    // ribbon empilhado é mais alto no mobile: vira estático no fim da hero (não transborda pra próxima seção)
-    // position:absolute explícito no mobile — sem isso o ribbon empilhado saía do hero e invadia a próxima seção
     `.rbribbon{position:absolute!important;flex-direction:column!important;align-items:flex-start!important;padding:16px 20px!important;gap:12px!important}` +
     `.rbribbon-stats{margin-left:0!important}` +
     `.rbbadge{display:none!important}` +
     `.e-con.e-con-boxed{padding-left:20px!important;padding-right:20px!important}` +
   `}`;
 
-// ================= SCRIPTS (widgets HTML invisíveis) =================
 const guard = `if(document.body.classList.contains('elementor-editor-active'))return;`;
-// reveal + nav stuck + barra de progresso + contadores
 const coreJS = `(function(){function I(){${guard}
 var d=document.documentElement;d.classList.add('rb-on');
 var nav=document.querySelector('.rbnav'),prog=document.querySelector('.rbprog');
@@ -136,7 +112,6 @@ function count(el){if(el.__c)return;el.__c=1;var raw=(el.textContent||'').trim()
 var sio=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){count(e.target);sio.unobserve(e.target);}});},{threshold:.5});
 document.querySelectorAll('.cnum').forEach(function(el){sio.observe(el);});
 }if(document.readyState!=='loading')I();else document.addEventListener('DOMContentLoaded',I);})();`;
-// menu mobile
 const popJS = `(function(){function I(){${guard}
 var b=document.querySelector('.rbnav-burger .elementor-button'),p=document.querySelector('.rbpop'),o=document.querySelector('.rbpop-ov');
 if(!b||!p||!o||b.__rb)return;b.__rb=1;
@@ -147,8 +122,7 @@ p.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(
 }if(document.readyState!=='loading')I();else document.addEventListener('DOMContentLoaded',I);})();`;
 const scriptW = (js, key) => html(`<script>${js.replace(/<\/script>/g, '<\\/script>')}</script>`, `rbjs ${key}`);
 
-// ================= 1 · NAV =================
-const RB_ICON = "<svg viewBox=\"0 0 412 390\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"> <path d=\"M89.5778 0.669677L215.87 0.52263C266.03 0.508377 320.81 -6.63262 359.54 32.3214C377.712 50.5959 387.304 71.7248 387.327 97.7839C387.552 121.517 378.095 144.316 361.145 160.922C354.987 167.068 348.072 172.394 340.565 176.771C337.715 178.431 322.415 185.374 322.085 185.953L324.17 186.789C326.87 188.657 328.37 188.77 331.52 189.408C329.105 193.027 311.285 223.097 310.557 223.59C307.557 224.075 306.117 224.116 303.162 224.162C290.082 223.947 276.432 223.935 263.547 226.676C255.68 228.343 233.915 233.572 227.247 236.74C217.212 222.341 209.952 214.47 195.2 204.413C205.895 200.379 217.332 198.134 228.304 194.515C195.987 170.664 148.7 159.244 109.37 160.116C102.02 160.279 92.5125 159.387 85.5105 160.315C85.6635 141.4 85.6133 122.484 85.3605 103.569C104.338 104.139 120.955 103.87 140.07 105.585C194.397 110.46 245.9 130.567 287.81 165.834C316.835 150.96 331.819 134.096 333.034 99.8642C334.017 72.3197 317.907 49.5479 290.592 43.9725C273.507 40.4849 251.697 41.7467 233.967 41.7467L148.697 41.6852C116.817 41.8697 84.9368 41.8772 53.0573 41.7099C53.073 67.667 53.7668 97.0607 52.9305 122.736C51.0668 125.772 51.9173 139.262 51.9893 143.468L51.6855 141.592C49.8848 139.983 50.8215 140.349 48.2355 140.375C45.4763 131.08 39.2213 122.327 36.5963 114.01C31.908 99.1522 29.9235 83.2993 22.1603 69.2199C17.049 59.9499 9.20777 52.1195 3.40052 43.5194C1.23977 40.3198 2.76076 29.4925 0.414761 25.1632C-0.361489 22.3177 0.198038 4.55636 0.302288 0.567639C29.1405 0.566139 61.0973 -0.222291 89.5778 0.669677Z\" fill=\"currentColor\"/> <path d=\"M0.302288 0.567697C29.1405 0.566196 61.0973 -0.222233 89.5778 0.669734C85.9778 3.23536 53.9543 0.531688 49.2435 2.95403C48.1268 7.22707 54.2415 35.2899 55.8465 40.6507C70.7753 39.3927 89.1443 40.9096 104.571 40.8458C110.729 40.8203 144.584 40.7265 148.697 41.6853C116.817 41.8698 84.9368 41.8773 53.0573 41.71C53.073 67.6671 53.7668 97.0607 52.9305 122.737C51.0668 125.773 51.9173 139.262 51.9893 143.468L51.6855 141.592C49.8848 139.983 50.8215 140.349 48.2355 140.375C45.4763 131.08 39.2213 122.327 36.5963 114.01C31.908 99.1523 29.9235 83.2994 22.1603 69.22C17.049 59.9499 9.20777 52.1195 3.40052 43.5194C1.23977 40.3199 2.76076 29.4925 0.414761 25.1632C-0.361489 22.3178 0.198038 4.55642 0.302288 0.567697Z\" fill=\"currentColor\"/> <path d=\"M228.304 194.515C244.287 205.476 250.909 212.226 263.547 226.676C255.679 228.343 233.914 233.571 227.247 236.74C217.212 222.34 209.952 214.47 195.199 204.413C205.894 200.379 217.332 198.134 228.304 194.515Z\" fill=\"currentColor\"/> <path d=\"M0.415718 25.1631C2.76172 29.4924 1.24073 40.3198 3.40148 43.5193C9.20873 52.1194 17.05 59.9498 22.1612 69.2198C29.9245 83.2993 31.909 99.1522 36.5972 114.01C39.2222 122.327 45.4773 131.08 48.2365 140.375C50.8225 140.349 49.8857 139.983 51.6865 141.592L51.9903 143.468C51.9183 139.261 51.0677 125.772 52.9315 122.736C53.1265 151.372 53.1745 180.008 53.0755 208.644C53.0702 234.289 53.425 261 52.9622 286.561C55.5415 284.12 59.2802 280.294 62.2105 278.57C68.9777 270.459 107.919 245.475 119.026 239.253C117.496 242.348 117.142 241.888 118.307 245.359C122.171 256.865 132.808 270.441 136.834 280.605L139.496 282.354C129.731 289.471 121.088 296.019 111.723 303.771C106.262 308.292 99.673 314.891 94.492 318.953C90.8005 323.595 82.1357 331.344 77.5765 336.39C62.8262 352.68 49.6765 370.35 38.3102 389.159C25.6615 389.051 13.0127 389.054 0.363991 389.165L0.357994 149.297L0.290474 78.2888C0.177974 61.3407 -0.369532 41.8764 0.415718 25.1631Z\" fill=\"currentColor\"/> <path d=\"M62.209 278.57C68.9762 270.459 107.918 245.474 119.025 239.252C117.495 242.348 117.14 241.888 118.306 245.359C122.17 256.865 132.807 270.441 136.833 280.605L139.495 282.353C129.729 289.471 121.087 296.019 111.722 303.771C106.261 308.292 99.6715 314.89 94.4905 318.953C94.4357 318.854 94.3803 318.754 94.3255 318.654C93.0828 310.53 72.0955 280.542 66.649 276.525L63.6662 278.976L62.209 278.57Z\" fill=\"currentColor\"/> <path d=\"M324.17 186.789C349.445 189.768 375.627 204.492 391.175 224.36C425.532 268.261 414.14 330.704 371.105 364.262C332.225 394.574 291.95 389.482 246.005 389.294L163.463 389.112C163.519 375.403 163.504 361.695 163.42 347.986L250.4 347.903C271.07 347.912 290.675 349.125 311.03 345.257C358.475 336.242 374.952 273.762 341.442 240.811C330.89 230.508 317.562 226.742 303.162 224.162C306.117 224.116 307.557 224.075 310.557 223.59C311.285 223.097 329.105 193.027 331.52 189.407C328.37 188.77 326.87 188.657 324.17 186.789Z\" fill=\"currentColor\"/> <path d=\"M119.025 239.253C143.135 225.018 168.665 213.341 195.199 204.413C209.952 214.47 217.212 222.34 227.247 236.74C193.624 248.96 169.125 261.703 139.495 282.354L136.833 280.605C132.807 270.441 122.17 256.865 118.306 245.359C117.141 241.888 117.495 242.348 119.025 239.253Z\" fill=\"currentColor\"/> </svg>"; // monograma RB real (assets/img/rb-icon.svg) — original usa como máscara sólida
+const RB_ICON = "<svg viewBox=\"0 0 412 390\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"> <path d=\"M89.5778 0.669677L215.87 0.52263C266.03 0.508377 320.81 -6.63262 359.54 32.3214C377.712 50.5959 387.304 71.7248 387.327 97.7839C387.552 121.517 378.095 144.316 361.145 160.922C354.987 167.068 348.072 172.394 340.565 176.771C337.715 178.431 322.415 185.374 322.085 185.953L324.17 186.789C326.87 188.657 328.37 188.77 331.52 189.408C329.105 193.027 311.285 223.097 310.557 223.59C307.557 224.075 306.117 224.116 303.162 224.162C290.082 223.947 276.432 223.935 263.547 226.676C255.68 228.343 233.915 233.572 227.247 236.74C217.212 222.341 209.952 214.47 195.2 204.413C205.895 200.379 217.332 198.134 228.304 194.515C195.987 170.664 148.7 159.244 109.37 160.116C102.02 160.279 92.5125 159.387 85.5105 160.315C85.6635 141.4 85.6133 122.484 85.3605 103.569C104.338 104.139 120.955 103.87 140.07 105.585C194.397 110.46 245.9 130.567 287.81 165.834C316.835 150.96 331.819 134.096 333.034 99.8642C334.017 72.3197 317.907 49.5479 290.592 43.9725C273.507 40.4849 251.697 41.7467 233.967 41.7467L148.697 41.6852C116.817 41.8697 84.9368 41.8772 53.0573 41.7099C53.073 67.667 53.7668 97.0607 52.9305 122.736C51.0668 125.772 51.9173 139.262 51.9893 143.468L51.6855 141.592C49.8848 139.983 50.8215 140.349 48.2355 140.375C45.4763 131.08 39.2213 122.327 36.5963 114.01C31.908 99.1522 29.9235 83.2993 22.1603 69.2199C17.049 59.9499 9.20777 52.1195 3.40052 43.5194C1.23977 40.3198 2.76076 29.4925 0.414761 25.1632C-0.361489 22.3177 0.198038 4.55636 0.302288 0.567639C29.1405 0.566139 61.0973 -0.222291 89.5778 0.669677Z\" fill=\"currentColor\"/> <path d=\"M0.302288 0.567697C29.1405 0.566196 61.0973 -0.222233 89.5778 0.669734C85.9778 3.23536 53.9543 0.531688 49.2435 2.95403C48.1268 7.22707 54.2415 35.2899 55.8465 40.6507C70.7753 39.3927 89.1443 40.9096 104.571 40.8458C110.729 40.8203 144.584 40.7265 148.697 41.6853C116.817 41.8698 84.9368 41.8773 53.0573 41.71C53.073 67.6671 53.7668 97.0607 52.9305 122.737C51.0668 125.773 51.9173 139.262 51.9893 143.468L51.6855 141.592C49.8848 139.983 50.8215 140.349 48.2355 140.375C45.4763 131.08 39.2213 122.327 36.5963 114.01C31.908 99.1523 29.9235 83.2994 22.1603 69.22C17.049 59.9499 9.20777 52.1195 3.40052 43.5194C1.23977 40.3199 2.76076 29.4925 0.414761 25.1632C-0.361489 22.3178 0.198038 4.55642 0.302288 0.567697Z\" fill=\"currentColor\"/> <path d=\"M228.304 194.515C244.287 205.476 250.909 212.226 263.547 226.676C255.679 228.343 233.914 233.571 227.247 236.74C217.212 222.34 209.952 214.47 195.199 204.413C205.894 200.379 217.332 198.134 228.304 194.515Z\" fill=\"currentColor\"/> <path d=\"M0.415718 25.1631C2.76172 29.4924 1.24073 40.3198 3.40148 43.5193C9.20873 52.1194 17.05 59.9498 22.1612 69.2198C29.9245 83.2993 31.909 99.1522 36.5972 114.01C39.2222 122.327 45.4773 131.08 48.2365 140.375C50.8225 140.349 49.8857 139.983 51.6865 141.592L51.9903 143.468C51.9183 139.261 51.0677 125.772 52.9315 122.736C53.1265 151.372 53.1745 180.008 53.0755 208.644C53.0702 234.289 53.425 261 52.9622 286.561C55.5415 284.12 59.2802 280.294 62.2105 278.57C68.9777 270.459 107.919 245.475 119.026 239.253C117.496 242.348 117.142 241.888 118.307 245.359C122.171 256.865 132.808 270.441 136.834 280.605L139.496 282.354C129.731 289.471 121.088 296.019 111.723 303.771C106.262 308.292 99.673 314.891 94.492 318.953C90.8005 323.595 82.1357 331.344 77.5765 336.39C62.8262 352.68 49.6765 370.35 38.3102 389.159C25.6615 389.051 13.0127 389.054 0.363991 389.165L0.357994 149.297L0.290474 78.2888C0.177974 61.3407 -0.369532 41.8764 0.415718 25.1631Z\" fill=\"currentColor\"/> <path d=\"M62.209 278.57C68.9762 270.459 107.918 245.474 119.025 239.252C117.495 242.348 117.14 241.888 118.306 245.359C122.17 256.865 132.807 270.441 136.833 280.605L139.495 282.353C129.729 289.471 121.087 296.019 111.722 303.771C106.261 308.292 99.6715 314.89 94.4905 318.953C94.4357 318.854 94.3803 318.754 94.3255 318.654C93.0828 310.53 72.0955 280.542 66.649 276.525L63.6662 278.976L62.209 278.57Z\" fill=\"currentColor\"/> <path d=\"M324.17 186.789C349.445 189.768 375.627 204.492 391.175 224.36C425.532 268.261 414.14 330.704 371.105 364.262C332.225 394.574 291.95 389.482 246.005 389.294L163.463 389.112C163.519 375.403 163.504 361.695 163.42 347.986L250.4 347.903C271.07 347.912 290.675 349.125 311.03 345.257C358.475 336.242 374.952 273.762 341.442 240.811C330.89 230.508 317.562 226.742 303.162 224.162C306.117 224.116 307.557 224.075 310.557 223.59C311.285 223.097 329.105 193.027 331.52 189.407C328.37 188.77 326.87 188.657 324.17 186.789Z\" fill=\"currentColor\"/> <path d=\"M119.025 239.253C143.135 225.018 168.665 213.341 195.199 204.413C209.952 214.47 217.212 222.34 227.247 236.74C193.624 248.96 169.125 261.703 139.495 282.354L136.833 280.605C132.807 270.441 122.17 256.865 118.306 245.359C117.141 241.888 117.495 242.348 119.025 239.253Z\" fill=\"currentColor\"/> </svg>";
 const navLink = (label, href) => WK('button', 'rbnav-link', { text: label, link: { url: href, is_external: '', nofollow: '' }, _element_width: 'initial' });
 const NAVITEMS = [['Quem é', '#quem'], ['Método', '#metodo'], ['Ecossistema', '#ecossistema'], ['Por que ele', '#why']];
 const navBrand = Cn(false, { content_width: 'full', css_classes: 'rbnav-brand' }, [
@@ -161,23 +135,15 @@ const navBurger = Cn(false, { content_width: 'full', css_classes: 'rbnav-burger'
 const nav = Cn(false, { content_width: 'full', css_classes: 'rb rbnav' },
   [Cn(true, { content_width: 'boxed', boxed_width: U(1280), padding: bx(0, 32, 0, 32), css_classes: 'rbnav-inner', flex_direction: 'row' },
     [navBrand, navLinks, navCta, navBurger])]);
-// popup mobile (nativo, editável)
 const popNav = Cn(false, { content_width: 'full', css_classes: 'rbpop', flex_direction: 'column' }, [
   ...NAVITEMS.map(([l, h]) => WK('button', 'rbpop-link', { text: l, link: { url: h, is_external: '', nofollow: '' } })),
   WK('button', 'rbpop-cta', { text: 'Comece por aqui', link: { url: '#cta', is_external: '', nofollow: '' } })]);
 const popOverlay = html('<div class="rbpop-ov"></div>', 'rbpop-ovw');
 
-// ================= 2 · HERO =================
 const heroCSS =
-  // gap:0 — o container do Elementor vem com gap 20px e o widget (vazio) do badge conta como filho,
-  // roubando 20px da altura do inner e desalinhando o texto em relação à foto
   `selector{position:relative;min-height:100svh;overflow:hidden;background:radial-gradient(82% 78% at 24% 28%,#F4ECE0,${T.bg} 70%);padding:0!important;gap:0!important}` +
   `selector .rbhero-photo{position:absolute!important;top:96px;right:clamp(24px,4vw,72px);bottom:104px;width:min(40%,520px);z-index:1;overflow:hidden;border-radius:4px;background:#BBBCC0;margin:0;padding:0!important}` +
   `selector .rbhero-photo img{width:100%;height:100%;object-fit:cover;object-position:top center;filter:contrast(1.03);border-radius:0}` +
-  // container do Elementor é column por padrão: sem flex-direction:row o `align-items:center` centraliza
-  // na HORIZONTAL e o conteúdo cola no topo do hero (H1 fica embaixo da nav fixa)
-  // desktop: o inner ocupa a hero inteira com o MESMO inset da foto (96/104) e centraliza —
-  // assim o bloco de texto fica opticamente alinhado à foto, com folga igual em cima e embaixo
   `selector .rbhero-inner{position:relative;z-index:3;flex:1 1 auto;min-height:0;display:flex!important;flex-direction:row!important;align-items:center!important;padding-block:96px 104px!important}` +
   `@media(max-width:680px){selector .rbhero-inner{flex:0 1 auto;min-height:70svh;padding-block:0!important}}` +
   `selector .rbhero-left{max-width:660px;padding-block:16px!important;width:auto!important;align-items:flex-start}` +
@@ -189,18 +155,14 @@ const heroCSS =
   `selector .rbhero-play .elementor-button{display:inline-flex;align-items:center;gap:10px;background:none;border:0;font-size:13.5px;font-weight:600;letter-spacing:.03em;color:${T.paper};padding:0;box-shadow:none}` +
   `selector .rbhero-play .elementor-button:hover{color:${T.gold};background:none;transform:none;box-shadow:none}` +
   `selector .rbhero-play .elementor-button-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1px solid ${T.line2};font-size:10px;color:${T.gold}}` +
-  // ribbon
   `selector .rbribbon{position:absolute!important;left:0;right:0;bottom:0;z-index:4;padding:22px max(clamp(20px,5vw,72px),(100% - 1280px)/2)!important;display:flex!important;flex-direction:row;align-items:center;gap:clamp(20px,4vw,60px)!important;border-top:1px solid ${T.line};background:${T.bg}}` +
   `selector .rbribbon-name{width:auto!important;flex:0 0 auto!important;gap:0!important;padding:0!important}` +
-  // no site original a regra `.hero__ribbon span` (mesma especificidade, vem depois) vence a `.hero__name span`:
-  // o nome renderiza pequeno, caixa alta e apagado. Replicado aqui para bater com o publicado.
   `selector .rbribbon-name .n,selector .rbribbon-name .n .elementor-heading-title{font-weight:600;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:${T.muted};line-height:1.25;margin:0}` +
   `selector .rbribbon-name .r,selector .rbribbon-name .r p{font-size:11px;letter-spacing:.03em;color:${T.muted};margin:0}` +
   `selector .rbribbon-stats{display:flex!important;flex-direction:row;gap:clamp(18px,3vw,46px)!important;margin-left:auto!important;flex-wrap:wrap;width:auto!important;padding:0!important}` +
   `selector .rbstat{width:auto!important;flex:0 0 auto!important;gap:0!important;padding:0!important}` +
   `selector .rbstat .v,selector .rbstat .v .elementor-heading-title{font-size:clamp(1.2rem,2vw,1.7rem);font-weight:600;letter-spacing:-.02em;color:${T.gold};line-height:1;margin:0}` +
   `selector .rbstat .l,selector .rbstat .l p{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:${T.muted};margin-top:5px}` +
-  // badge giratório
   `selector .rbbadge{position:absolute!important;right:clamp(20px,5vw,72px);bottom:128px;z-index:5;width:96px;height:96px;display:grid;place-items:center;color:${T.gold}}` +
   `selector .rbbadge svg{position:absolute;inset:0;width:100%;height:100%;animation:rbspin 18s linear infinite;fill:${T.gold};font-size:9.2px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}` +
   `selector .rbbadge .ar{font-size:18px;color:${T.paper}}` +
@@ -232,7 +194,6 @@ const hero = Cn(false, { content_width: 'full', _element_id: 'top', css_classes:
   Cn(true, { content_width: 'boxed', boxed_width: U(1280), padding: bx(0, 32, 0, 32), css_classes: 'rbhero-inner' }, [heroLeft]),
   heroRibbon, heroBadge]);
 
-// ================= 3 · QUEM É =================
 const whoCSS =
   `selector{background:${T.bg2};padding-block:clamp(80px,11vw,150px)!important}` +
   `selector .rbwho-top{display:grid!important;grid-template-columns:1fr 1fr;gap:clamp(40px,6vw,90px)!important;align-items:start;margin-bottom:clamp(56px,8vw,110px)!important;padding:0!important}` +
@@ -270,7 +231,6 @@ const who = Cn(false, { content_width: 'full', _element_id: 'quem', css_classes:
     whoCol('Áreas de atuação', [['01', 'Gestão e direção para clínicas de alto padrão'], ['02', 'Marca, posicionamento e autoridade médica'], ['03', 'Novos negócios e expansão sustentável']]),
     whoCol('Trajetória &amp; reconhecimento', [['04', 'Founder &amp; ex-CEO · +35 anos de mercado'], ['05', 'Protocolo Regenerativo do Melasma'], ['06', 'CD Clínica · referência no Leblon']])])])]);
 
-// ================= 4 · MÉTODO (prova + marquee) =================
 const LOGOS = [IMG.merz, IMG.btl, IMG.contourline, IMG.evo, IMG.lmg, IMG.farma, IMG.genomics];
 const proofCSS =
   `selector{background:${T.bg};overflow:hidden;padding-block:clamp(80px,11vw,150px) clamp(36px,4vw,56px)!important}` +
@@ -303,7 +263,6 @@ const proof = Cn(false, { content_width: 'full', _element_id: 'metodo', css_clas
     WK('text-editor', 'rbapoio-l', { editor: '<p>Apoio científico de quem lidera o mercado</p>' }),
     html(marqueeHTML, 'rbmq-w')])])]);
 
-// ================= 5 · ECOSSISTEMA =================
 const PLANS = [
   { n: '01', name: 'Workshop Business', tag: 'Online', badge: 'Comece por aqui', feat: true, items: ['Marketing e autoridade', 'Posicionar sua clínica', 'Atrair os pacientes certos', 'Sem precisar virar influencer'] },
   { n: '02', name: 'Business Presencial', tag: 'Imersão de 1 dia', badge: 'novo', soft: true, items: ['Gestão, marketing e novos negócios', 'Do automático à estrutura', 'Divisor de águas da carreira'] },
@@ -345,8 +304,6 @@ const planCard = (p) => Cn(false, { content_width: 'full', css_classes: `rbplan 
   WK('text-editor', 'rbplan-list', { editor: `<ul>${p.items.map((i) => `<li>${i}</li>`).join('')}</ul>` }),
   Cn(false, { content_width: 'full', css_classes: 'rbplan-link' }, [
     WK('button', '', { text: 'Saiba mais', link: { url: '#cta', is_external: '', nofollow: '' }, selected_icon: { value: 'fas fa-arrow-right', library: 'fa-solid' }, icon_align: 'right' })])]);
-// e-no-lazyload: sem isso o lazy-load de background do Elementor zera o gradiente do card destaque
-// (regra `...:not(.e-lazyloaded):not(.e-no-lazyload) *{background-image:none!important}`)
 const work = Cn(false, { content_width: 'full', _element_id: 'ecossistema', css_classes: 'rb rbwork e-no-lazyload', custom_css: workCSS }, [
   html('<div class="rbwork-arrow"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M20 80 L80 20 M45 20 L80 20 L80 55" stroke="currentColor" stroke-width="6" fill="none"/></svg></div>', 'rbwork-arrow-w'),
   boxed([
@@ -355,7 +312,6 @@ const work = Cn(false, { content_width: 'full', _element_id: 'ecossistema', css_
       WK('text-editor', 'rbwork-note rvl', { editor: '<p>Mais do que cursos, uma jornada completa, do primeiro contato ao acompanhamento estratégico da sua carreira. Formatos de imersão para cada estágio.</p>' })]),
     Cn(true, { content_width: 'full', css_classes: 'rbplans' }, PLANS.map(planCard))])]);
 
-// ================= 6 · TRAJETÓRIA (floors) =================
 const icChart = '<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 7-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 8h4v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const icCap = '<svg viewBox="0 0 24 24"><path d="M2 8l10-4 10 4-10 4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 10.5V16c0 1.2 2.7 2.6 6 2.6s6-1.4 6-2.6v-5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 const icDrop = '<svg viewBox="0 0 24 24"><path d="M12 3s6 6 6 10a6 6 0 1 1-12 0c0-4 6-10 6-10z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
@@ -419,7 +375,6 @@ const why = Cn(false, { content_width: 'full', _element_id: 'why', css_classes: 
     footItem('Onde', 'CD Clínica · Leblon, Rio de Janeiro. Atendimento referência no país.'),
     footItem('Changeover Education', 'Educação aplicada para médicos que querem crescer com estrutura.', 'rbfoot-r')])])]);
 
-// ================= 7 · REDES =================
 const redesCSS =
   `selector{background:${T.bg2};padding:0!important}` +
   `selector .rbredes{display:grid!important;grid-template-columns:minmax(0,38%) 1fr;align-items:center;padding:0!important;gap:0!important}` +
@@ -446,7 +401,6 @@ const redes = Cn(false, { content_width: 'full', _element_id: 'redes', css_class
         WK('button', 'rbtn rbtn-lg rbtn-text', { text: 'Seguir @ronaldo_barcelos_', link: { url: IG, is_external: 'on', nofollow: '' } }),
         WK('button', 'rbicon-btn', { text: '', link: { url: IG, is_external: 'on', nofollow: '' }, selected_icon: { value: 'fab fa-instagram', library: 'fa-brands' } })])])])]);
 
-// ================= 8 · CTA =================
 const ctaCSS =
   `selector{background:${T.bg};position:relative;overflow:hidden;text-align:center;padding-block:clamp(80px,11vw,150px)!important}` +
   `selector::before{content:"";position:absolute;inset:0;z-index:1;background:radial-gradient(60% 70% at 50% 30%,rgba(168,90,64,.12),transparent 62%);pointer-events:none}` +
@@ -465,7 +419,6 @@ const cta = Cn(false, { content_width: 'full', _element_id: 'cta', css_classes: 
     Cn(false, { content_width: 'full', css_classes: 'rbcta-a rvl' }, [
       WK('button', 'rbtn rbtn-lg', { text: 'Comece por aqui', link: { url: 'https://wa.me/', is_external: 'on', nofollow: '' }, selected_icon: { value: 'fas fa-arrow-right', library: 'fa-solid' }, icon_align: 'right' })])])])]);
 
-// ================= 9 · FOOTER =================
 const footCSS =
   `selector{background:${T.ink};color:rgba(242,236,228,.6);padding-block:64px 30px!important;border-top:1px solid ${T.line}}` +
   `selector .rbfoot-grid{display:grid!important;grid-template-columns:1.5fr 1fr 1fr;gap:40px!important;padding-bottom:40px!important;border-bottom:1px solid rgba(242,236,228,.12)}` +
@@ -495,13 +448,10 @@ const footer = Cn(false, { content_width: 'full', css_classes: 'rb rbfooter', cu
     WK('text-editor', '', { editor: '<p>© 2026 Changeover Education</p>' }),
     WK('text-editor', '', { editor: '<p><a href="#">Termos de uso</a> · <a href="#">Política de privacidade</a></p>' })])])]);
 
-// ================= MONTAGEM =================
 const scripts = Cn(false, { content_width: 'full', custom_css: 'selector{padding:0!important;min-height:0!important}' }, [
   html('<div class="rbprog"></div>', 'rbprog-w'),
   popOverlay, scriptW(coreJS, 'rbcore'), scriptW(popJS, 'rbpop-js')]);
 const content = [nav, popNav, hero, who, proof, work, why, redes, cta, footer, scripts];
-// Elementor lazy-carrega background e zera `background-image` com !important até a seção virar `.e-lazyloaded`
-// (mata os gradientes CSS do hero e do card destaque). Todas as imagens aqui são <img>, então o opt-out é grátis.
 content.forEach((s) => {
   const c = s.settings.css_classes || '';
   if (!c.includes('e-no-lazyload')) s.settings.css_classes = (c + ' e-no-lazyload').trim();
@@ -513,7 +463,6 @@ const doc = {
   version: '0.4', title: 'Ronaldo Barcelos — Nativo', type: 'page',
 };
 
-// ---- validação (ids únicos, widget com widgetType) ----
 let nodes = 0; const seen = new Set();
 (function walk(a) {
   a.forEach((e) => {

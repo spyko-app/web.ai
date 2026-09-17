@@ -13,7 +13,6 @@ import { validate } from '../src/validate.js';
 import { findById, setText, duplicateNode } from '../src/edit.js';
 import { applyCustomCss, applyMotion, applyResponsivePadding } from '../src/advanced.js';
 
-// --- id ---
 test('id: 8 hex', () => assert.match(newIdFactory().id(), /^[0-9a-f]{8}$/));
 test('subId: 7 hex', () => assert.match(newIdFactory().subId(), /^[0-9a-f]{7}$/));
 test('ids únicos (1000)', () => {
@@ -22,7 +21,6 @@ test('ids únicos (1000)', () => {
   assert.equal(s.size, 1000);
 });
 
-// --- units ---
 test('u: objeto unidade', () => assert.deepEqual(u(18), { unit: 'px', size: 18, sizes: [] }));
 test('box: 4 lados string', () => assert.deepEqual(box(14, 16, 14, 10),
   { unit: 'px', top: '14', right: '16', bottom: '14', left: '10', isLinked: false }));
@@ -37,7 +35,6 @@ test('isHexColor', () => {
   assert.equal(isHexColor('white'), false);
 });
 
-// --- node ---
 test('container forma', () => {
   const c = makeContainer(newIdFactory(), { isInner: false });
   assert.equal(c.elType, 'container'); assert.equal('widgetType' in c, false);
@@ -47,7 +44,6 @@ test('widget forma', () => {
   assert.equal(w.widgetType, 'heading'); assert.deepEqual(w.elements, []);
 });
 
-// --- widgets ---
 test('heading emit', () => {
   const n = getWidget('heading')(newIdFactory(), { title: 'Bem-vindo', tag: 'h1', color: '#111111' });
   assert.equal(n.settings.header_size, 'h1'); assert.equal(n.settings.title_color, '#111111');
@@ -57,7 +53,6 @@ test('button link objeto', () => {
   assert.equal(n.settings.link.url, '#price'); assert.equal(n.settings.link.is_external, '');
 });
 
-// --- builder ---
 test('buildPage envelope', () => {
   const p = buildPage({ title: 'Home', sections: [] });
   assert.equal(p.version, '0.4'); assert.equal(p.type, 'page'); assert.ok(p.page_settings);
@@ -74,7 +69,6 @@ test('buildPage ids únicos', () => {
   assert.equal(new Set(ids).size, ids.length);
 });
 
-// --- validate ---
 const pg = () => buildPage({ title: 'X', sections: [{ children: [{ type: 'heading', props: { title: 'Oi' } }] }] });
 test('página válida passa', () => { const r = validate(pg()); assert.equal(r.ok, true, r.errors.join('; ')); });
 test('version errada falha', () => { const p = pg(); p.version = '0.3'; assert.equal(validate(p).ok, false); });
@@ -87,7 +81,6 @@ test('widgetType desconhecido falha', () => {
   assert.equal(validate(p).ok, false);
 });
 
-// --- edit ---
 test('setText troca', () => {
   const p = pg(); const id = p.content[0].elements[0].id;
   setText(p, id, 'Novo'); assert.equal(findById(p, id).settings.title, 'Novo');
@@ -99,7 +92,6 @@ test('duplicateNode regenera ids + válido', () => {
   assert.equal(validate(p).ok, true, validate(p).errors.join('; '));
 });
 
-// --- advanced ---
 test('applyCustomCss', () => {
   const p = pg(); const id = p.content[0].elements[0].id;
   applyCustomCss(p, id, 'sel{opacity:.5}'); assert.match(findById(p, id).settings.custom_css, /opacity/);
